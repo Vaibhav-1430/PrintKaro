@@ -1,0 +1,52 @@
+{
+  "name": "@print-karo/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist .turbo node_modules/.prisma"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "@print-karo/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@print-karo/config-eslint": "workspace:*",
+    "@print-karo/config-tsconfig": "workspace:*",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.17.0",
+    "prisma": "^6.2.1",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,1047 @@
+// Print Karo — Prisma schema.
+// Sprint 2 scope: Authentication & Identity (RBAC, sessions, machine auth, audit).
+// Business tables (jobs, payments, …) arrive in later sprints per
+// docs/database-design.md.
+//
+// Conventions (enterprise):
+//   - UUID primary keys everywhere (@default(uuid())).
+//   - Soft delete via nullable deletedAt; never hard-delete identity rows.
+//   - createdAt / updatedAt on every model.
+//   - Explicit indexes, unique constraints, foreign keys.
+//   - Better Auth core tables (User/Account/Session/Verification) keep the
+//     field names its Prisma adapter expects; we only ADD columns.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ────────────────────────────── ENUMS ──────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  CUSTOMER
+  MACHINE
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+// Lifecycle status — "is this machine commissioned" (set by admins).
+enum MachineStatus {
+  PROVISIONING
+  ACTIVE
+  SUSPENDED
+  DECOMMISSIONED
+}
+
+// Runtime state — "what is the machine doing right now" (reported via heartbeat).
+enum MachineRuntimeState {
+  ONLINE
+  OFFLINE
+  BOOTING
+  IDLE
+  PRINTING
+  PAUSED
+  ERROR
+  OUT_OF_PAPER
+  PAPER_JAM
+  PRINTER_OFFLINE
+  LOW_INK
+  LOW_TONER
+  MAINTENANCE
+}
+
+// Hardware family — the backend stays agnostic to this; it exists only for
+// reporting. A Windows PC and a Raspberry Pi follow the identical protocol.
+enum MachineType {
+  WINDOWS
+  RASPBERRY_PI
+  INDUSTRIAL_PC
+}
+
+// Printer readiness reported by the agent's printer adapter.
+enum PrinterState {
+  READY
+  BUSY
+  PAUSED
+  OFFLINE
+  ERROR
+  UNKNOWN
+}
+
+// Result of the health gate computation.
+enum HealthGateResult {
+  READY
+  WARNING
+  BLOCKED
+}
+
+enum MachineLogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+enum MachineLogEvent {
+  LOGIN
+  LOGOUT
+  HEARTBEAT
+  PRINT_START
+  PRINT_SUCCESS
+  PRINT_FAILURE
+  RESTART
+  RECONNECT
+  SHUTDOWN
+  CRASH
+  ERROR
+  WARNING
+  JOB_ACCEPTED
+  JOB_REJECTED
+  CONFIG_FETCHED
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  USER_LOGOUT
+  USER_LOGOUT_ALL
+  LOGIN_FAILED
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  EMAIL_VERIFICATION_SENT
+  EMAIL_VERIFIED
+  PROFILE_UPDATED
+  SESSION_REVOKED
+  ROLE_CHANGED
+  USER_SUSPENDED
+  USER_REACTIVATED
+  ADMIN_CREATED
+  OPERATOR_CREATED
+  MACHINE_CREATED
+  MACHINE_LOGIN
+  MACHINE_LOGOUT
+  MACHINE_TOKEN_REFRESHED
+  MACHINE_REVOKED
+  MACHINE_REGISTERED
+  MACHINE_SUSPENDED
+  MACHINE_REACTIVATED
+  MACHINE_RESTART_REQUESTED
+  MACHINE_SECRET_ROTATED
+  MACHINE_HEARTBEAT_STALE
+  OAUTH_LINKED
+  // ── Sprint 4: print pipeline ──
+  ORDER_CREATED
+  ORDER_UPLOADED
+  ORDER_VALIDATED
+  ORDER_MACHINE_VERIFIED
+  ORDER_PAYMENT_INITIATED
+  ORDER_PAID
+  ORDER_PAYMENT_FAILED
+  PIN_GENERATED
+  PIN_REDEEMED
+  PIN_FAILED
+  PIN_EXPIRED
+  PRINT_DISPATCHED
+  PRINT_STARTED
+  PRINT_COMPLETED
+  PRINT_FAILED
+  ORDER_COMPLETED
+  ORDER_EXPIRED
+  ORDER_CANCELLED
+  REFUND_ISSUED
+  FILE_UPLOADED
+  FILE_REJECTED
+  FILE_DOWNLOADED
+}
+
+// ───────────────── SPRINT 4: PRINT PIPELINE ENUMS ─────────────────
+
+enum UploadStatus {
+  PENDING // ticket issued, awaiting client PUT to storage
+  UPLOADED // client confirmed; bytes present in storage
+  CONVERTING // conversion to PDF in progress
+  VALIDATED // validated + metadata extracted; ready to order
+  REJECTED // failed validation/scan
+}
+
+// The customer order lifecycle. Every transition is audited.
+enum OrderStatus {
+  DRAFT
+  UPLOADED
+  VALIDATED
+  MACHINE_READY
+  PAYMENT_PENDING
+  PAID
+  PIN_GENERATED
+  WAITING_AT_MACHINE
+  PRINTING
+  COMPLETED
+  FAILED
+  EXPIRED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+// Outcome of a single charge/refund attempt at the provider.
+enum PaymentResult {
+  SUCCESS
+  FAILURE
+  TIMEOUT
+  CANCELLED
+}
+
+enum PinStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  REVOKED
+}
+
+// DB-backed print job queue states (FIFO + claim/lock + retry + dead-letter).
+enum PrintJobStatus {
+  QUEUED
+  DISPATCHED
+  CLAIMED
+  PRINTING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  PIN_GENERATED
+  PRINTING_STARTED
+  PRINTING_COMPLETED
+  PRINTING_FAILED
+  ORDER_EXPIRED
+  REFUND_ISSUED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+}
+
+// ───────────────────────── AUTH (Better Auth core) ─────────────────────────
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  name          String?
+  emailVerified Boolean    @default(false)
+  image         String?
+  role          Role       @default(CUSTOMER)
+  status        UserStatus @default(ACTIVE)
+  // Kept for Better Auth additionalField compatibility; mirrors status==ACTIVE.
+  isActive      Boolean    @default(true)
+
+  accounts      Account[]
+  sessions      Session[]
+  auditLogs     AuditLog[]      @relation("ActorAudit")
+
+  customerProfile CustomerProfile?
+  operatorProfile OperatorProfile?
+  adminProfile    AdminProfile?
+
+  // Sprint 4: print pipeline back-references.
+  orders        Order[]
+  notifications Notification[]
+
+  // Self-referential: which admin/super-admin created this staff user.
+  createdById String?
+  createdBy   User?   @relation("UserCreator", fields: [createdById], references: [id])
+  createdUsers User[] @relation("UserCreator")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([role])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+
+  // Extended session/device metadata (Sprint 2).
+  deviceType     String?
+  browser        String?
+  os             String?
+  country        String? // future-ready (geo-ip)
+  fingerprint    String?
+  lastActivityAt DateTime @default(now())
+  revoked        Boolean  @default(false)
+  revokedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([revoked])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+// ───────────────────────── RBAC (data-driven) ─────────────────────────
+
+model Permission {
+  id          String   @id @default(uuid())
+  // Stable key, e.g. "users:read", "machines:manage". No hardcoded auth logic.
+  key         String   @unique
+  description String?
+
+  roles RolePermission[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_permissions")
+}
+
+// ───────────────────────── PROFILES (1:1 per user type) ─────────────────────────
+
+model CustomerProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  phone       String?
+  defaultCity String?
+
+  // Sprint 4: print pipeline back-references.
+  uploads Upload[]
+  orders  Order[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("customer_profiles")
+}
+
+model OperatorProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  businessName String
+  contactPhone String?
+  payoutVpa    String?
+  approved     Boolean @default(false)
+
+  machines Machine[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([approved])
+  @@map("operator_profiles")
+}
+
+model AdminProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  department String?
+  // True only for the platform super admin.
+  isSuperAdmin Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("admin_profiles")
+}
+
+// ───────────────────────── MACHINE IDENTITY ─────────────────────────
+
+model Machine {
+  id        String        @id @default(uuid())
+  // Human-readable label, e.g. PK-DEL-001.
+  code      String        @unique
+  name      String
+  status    MachineStatus @default(PROVISIONING)
+  type      MachineType   @default(WINDOWS)
+
+  // Location (denormalised for fast dashboard filtering).
+  college   String?
+  building  String?
+  floor     String?
+  room      String?
+  latitude  Float?
+  longitude Float?
+
+  operatorProfileId String?
+  operatorProfile   OperatorProfile? @relation(fields: [operatorProfileId], references: [id])
+
+  machineProfile MachineProfile?
+  credential     MachineCredential?
+  refreshTokens  RefreshToken[]
+
+  capabilities  MachineCapabilities?
+  printer       MachinePrinter?
+  network       MachineNetwork?
+  configuration MachineConfiguration?
+  health        MachineHealth?
+  heartbeats    MachineHeartbeat[]
+  logs          MachineLog[]
+
+  // Sprint 4: print pipeline back-references.
+  orders       Order[]
+  printJobs    PrintJob[]
+  pins         Pin[]
+  pricingRules PricingRule[]
+
+  lastAuthAt      DateTime?
+  lastHeartbeatAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([status])
+  @@index([type])
+  @@index([operatorProfileId])
+  @@index([college])
+  @@index([lastHeartbeatAt])
+  @@index([deletedAt])
+  @@map("machines")
+}
+
+model MachineProfile {
+  id        String   @id @default(uuid())
+  machineId String   @unique
+  machine   Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  locationLabel String?
+  latitude      Float?
+  longitude     Float?
+  platform      String? // "windows" | "linux-arm" | ...
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("machine_profiles")
+}
+
+model MachineCredential {
+  id        String  @id @default(uuid())
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  // Argon2id hash of the machine secret. Raw secret is shown once at provisioning.
+  secretHash  String
+  // Allows rotating the secret while keeping an audit trail.
+  rotatedAt   DateTime  @default(now())
+  expiresAt   DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("machine_credentials")
+}
+
+// Declared capabilities of a machine (set at registration, refined by the agent).
+model MachineCapabilities {
+  id        String  @id @default(uuid())
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  colorSupport  Boolean  @default(false)
+  duplexSupport Boolean  @default(false)
+  paperSizes    String[] @default(["A4"])
+  maxCopies     Int      @default(50)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("machine_capabilities")
+}
+
+// Latest printer snapshot for a machine (one row, upserted by heartbeats).
+model MachinePrinter {
+  id        String  @id @default(uuid())
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  printerName   String?
+  isDefault     Boolean      @default(false)
+  state         PrinterState @default(UNKNOWN)
+  paperRemaining Int?        // estimated sheets
+  paperSize     String?
+  colorAvailable Boolean     @default(false)
+  duplexAvailable Boolean    @default(false)
+  inkLevel      Int?         // percent
+  tonerLevel    Int?         // percent
+  errorCode     String?
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("machine_printers")
+}
+
+// Latest network snapshot for a machine (one row, upserted by heartbeats).
+model MachineNetwork {
+  id        String  @id @default(uuid())
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  online       Boolean @default(false) // local network up
+  internet     Boolean @default(false) // can reach the internet
+  ipAddress    String?
+  connection   String? // "ethernet" | "wifi" | ...
+  signalStrength Int?  // percent (wifi)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("machine_networks")
+}
+
+// Server-owned configuration delivered to the machine via GET /machine/config.
+model MachineConfiguration {
+  id        String  @id @default(uuid())
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  heartbeatIntervalSec Int      @default(30)
+  queuePollIntervalSec Int      @default(15)
+  logUploadIntervalSec Int      @default(60)
+  maintenanceMode      Boolean  @default(false)
+  // Free-form overrides without a migration (agent reads known keys).
+  settings             Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("machine_configurations")
+}
+
+// Append-only heartbeat history (time-series). Retention-managed.
+model MachineHeartbeat {
+  id        String  @id @default(uuid())
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  runtimeState MachineRuntimeState
+  printerState PrinterState        @default(UNKNOWN)
+  printerName  String?
+
+  cpuUsage    Float?
+  ramUsage    Float?
+  diskUsage   Float?
+  temperature Float?
+
+  networkOnline Boolean @default(false)
+  internet      Boolean @default(false)
+
+  paperRemaining  Int?
+  paperSize       String?
+  colorAvailable  Boolean @default(false)
+  duplexAvailable Boolean @default(false)
+  inkLevel        Int?
+  tonerLevel      Int?
+
+  currentJobId String?
+  errorCode    String?
+
+  // The machine's own timestamp (the agent's clock).
+  reportedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([machineId, createdAt])
+  @@index([createdAt])
+  @@map("machine_heartbeats")
+}
+
+// Current health snapshot (one row per machine, upserted each heartbeat).
+model MachineHealth {
+  id        String  @id @default(uuid())
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  runtimeState MachineRuntimeState @default(OFFLINE)
+  printerState PrinterState        @default(UNKNOWN)
+
+  // 0–100 composite score and the gate decision derived from it.
+  healthScore Int              @default(0)
+  gateResult  HealthGateResult @default(BLOCKED)
+  // Machine-readable reasons the gate is not READY (e.g. ["OUT_OF_PAPER"]).
+  blockingReasons String[]     @default([])
+
+  printerConnected Boolean @default(false)
+  paperAvailable   Boolean @default(false)
+  consumablesOk    Boolean @default(false)
+  internet         Boolean @default(false)
+  heartbeatFresh   Boolean @default(false)
+
+  cpuUsage    Float?
+  ramUsage    Float?
+  diskUsage   Float?
+  temperature Float?
+
+  lastHeartbeatAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gateResult])
+  @@index([runtimeState])
+  @@map("machine_health")
+}
+
+// Append-only machine event log (uploaded by the agent + written by the server).
+model MachineLog {
+  id        String  @id @default(uuid())
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  level   MachineLogLevel @default(INFO)
+  event   MachineLogEvent
+  message String?
+  context Json?
+
+  correlationId String?
+  // The agent's timestamp when the event occurred.
+  occurredAt    DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([machineId, createdAt])
+  @@index([event, createdAt])
+  @@index([level])
+  @@map("machine_logs")
+}
+
+// Refresh tokens for MACHINE JWT auth (rotation + revocation).
+// Stored hashed; one row per issued refresh token (rotation = new row + revoke old).
+model RefreshToken {
+  id        String  @id @default(uuid())
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  tokenHash String   @unique
+  // Rotation chain: the token that replaced this one (if any).
+  replacedById String?
+  replacedBy   RefreshToken?  @relation("TokenRotation", fields: [replacedById], references: [id])
+  rotatedFrom  RefreshToken[] @relation("TokenRotation")
+
+  expiresAt DateTime
+  revoked   Boolean   @default(false)
+  revokedAt DateTime?
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([machineId])
+  @@index([revoked])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ───────────────────────── AUDIT ─────────────────────────
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  action AuditAction
+
+  // Actor (nullable for system / failed-login-before-resolve cases).
+  actorUserId String?
+  actor       User?   @relation("ActorAudit", fields: [actorUserId], references: [id])
+  actorType   String  @default("USER") // USER | MACHINE | SYSTEM
+  actorMachineId String?
+
+  // Target of the action (e.g. user whose role changed).
+  targetType String?
+  targetId   String?
+
+  ipAddress     String?
+  userAgent     String?
+  correlationId String?
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([actorUserId])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+// ═════════════════════ SPRINT 4: PRINT PIPELINE ═════════════════════
+// All additive. Money is stored as integer paise (never floats).
+// Files never pass through the API — only presigned PUT/GET URLs do.
+
+// An uploaded source document. Bytes live in object storage (R2); only
+// metadata is in the DB. De-duplicated by sha256.
+model Upload {
+  id                String  @id @default(uuid())
+  customerProfileId String
+  customerProfile   CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Cascade)
+
+  // Storage object key (the PDF used for printing — the converted copy if any).
+  storageKey      String  @unique
+  // The original upload's key, retained even after conversion.
+  originalKey     String?
+  originalFilename String
+  mimeType        String
+  sizeBytes       Int
+  sha256          String
+  status          UploadStatus @default(PENDING)
+  virusScanClean  Boolean      @default(true)
+  rejectionReason String?
+
+  metadata FileMetadata?
+  orders   Order[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([customerProfileId])
+  @@index([sha256])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("uploads")
+}
+
+// Extracted print-relevant metadata for an upload (1:1).
+model FileMetadata {
+  id       String @id @default(uuid())
+  uploadId String @unique
+  upload   Upload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  pageCount             Int
+  isColor               Boolean @default(false)
+  orientation           String  @default("portrait") // portrait | landscape
+  paperSize             String  @default("A4")
+  estimatedPrintSeconds Int     @default(0)
+  widthPt               Float?
+  heightPt              Float?
+  encrypted             Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("file_metadata")
+}
+
+// A print order — the spine of the pipeline. One document, one machine.
+model Order {
+  id          String @id @default(uuid())
+  orderNumber String @unique
+
+  customerProfileId String
+  customerProfile   CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  uploadId String
+  upload   Upload @relation(fields: [uploadId], references: [id])
+
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id])
+
+  status      OrderStatus @default(DRAFT)
+  amountPaise Int         @default(0)
+  currency    String      @default("INR")
+
+  printOption PrintOption?
+  payment     Payment?
+  pin         Pin?
+  printJob    PrintJob?
+  receipt     Receipt?
+
+  failureReason String?
+  paidAt        DateTime?
+  printedAt     DateTime?
+  completedAt   DateTime?
+  expiresAt     DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([customerProfileId, status])
+  @@index([machineId, status])
+  @@index([status, createdAt])
+  @@index([deletedAt])
+  @@map("orders")
+}
+
+// Chosen print options for an order (1:1).
+model PrintOption {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  copies       Int     @default(1)
+  colorMode    String  @default("BW") // BW | COLOR
+  duplex       Boolean @default(false)
+  paperSize    String  @default("A4")
+  orientation  String  @default("portrait")
+  pageRange    String? // null = all pages, else e.g. "1-3,5"
+  pagesToPrint Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("print_options")
+}
+
+// Payment record for an order (1:1). Provider-agnostic.
+model Payment {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider          String        @default("simulator")
+  status            PaymentStatus @default(PENDING)
+  amountPaise       Int
+  currency          String        @default("INR")
+  providerOrderId   String?
+  providerPaymentId String?
+  failureReason     String?
+  refundedAt        DateTime?
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([orderId])
+  @@map("payments")
+}
+
+// Individual charge/refund attempt against the provider (append-only).
+model Transaction {
+  id        String @id @default(uuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  type        String        @default("CHARGE") // CHARGE | REFUND
+  result      PaymentResult
+  providerRef String?
+  amountPaise Int
+  rawResponse Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
+  @@index([result])
+  @@map("transactions")
+}
+
+// One-time secure PIN that unlocks printing at the machine. Hash only.
+model Pin {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id])
+
+  // Argon2id hash of the 4-digit code. The plaintext is NEVER stored.
+  codeHash    String
+  status      PinStatus @default(ACTIVE)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  expiresAt   DateTime
+  redeemedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([machineId, status])
+  @@index([status, expiresAt])
+  @@index([orderId])
+  @@map("pins")
+}
+
+// Receipt issued for a completed/paid order (1:1).
+model Receipt {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  receiptNumber String  @unique
+  amountPaise   Int
+  currency      String  @default("INR")
+  storageKey    String? // optional PDF receipt in object storage
+
+  issuedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("receipts")
+}
+
+// DB-backed print job queue entry (1:1 with order). Row-level claim/lock
+// gives FIFO + retry + dead-letter + restart-recovery without external infra.
+model PrintJob {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id])
+
+  status      PrintJobStatus @default(QUEUED)
+  attempts    Int            @default(0)
+  maxAttempts Int            @default(3)
+  // Advisory claim token + visibility timeout for atomic dequeue.
+  lockToken   String?
+  claimedAt   DateTime?
+  lockedUntil DateTime?
+
+  dispatchedAt  DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  failedAt      DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([machineId, status])
+  @@index([status, lockedUntil])
+  @@index([orderId])
+  @@map("print_jobs")
+}
+
+// In-app / email / sms notification record (persisted, then dispatched).
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderId String?
+  type    NotificationType
+  channel NotificationChannel @default(IN_APP)
+  title   String
+  body    String
+  read    Boolean             @default(false)
+  sentAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, read])
+  @@index([type])
+  @@map("notifications")
+}
+
+// Admin-configurable pricing rule. machineId null = global default.
+model PricingRule {
+  id        String   @id @default(uuid())
+  machineId String?
+  machine   Machine? @relation(fields: [machineId], references: [id])
+
+  paperSize         String  @default("A4")
+  bwPerPagePaise    Int     @default(200)
+  colorPerPagePaise Int     @default(1000)
+  duplexDiscountPct Int     @default(0) // 0–100, applied to per-page price
+  active            Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([machineId, paperSize])
+  @@index([active])
+  @@map("pricing_rules")
+}

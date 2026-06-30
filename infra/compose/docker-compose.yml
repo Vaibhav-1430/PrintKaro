@@ -1,0 +1,42 @@
+# Local development infrastructure for Print Karo.
+# Brings up the stateful dependencies the apps need (Postgres + Redis).
+# Apps themselves run via `pnpm dev` on the host for fast HMR.
+#
+# Usage:  docker compose -f infra/compose/docker-compose.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: printkaro-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: printkaro
+      POSTGRES_PASSWORD: printkaro
+      POSTGRES_DB: printkaro
+    ports:
+      - '5432:5432'
+    volumes:
+      - printkaro-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U printkaro -d printkaro']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: printkaro-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - printkaro-redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  printkaro-pgdata:
+  printkaro-redisdata:

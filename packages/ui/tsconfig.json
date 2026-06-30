@@ -1,0 +1,9 @@
+{
+  "extends": "@print-karo/config-tsconfig/react-library.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

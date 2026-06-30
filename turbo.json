@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalDependencies": [".env", "tsconfig.base.json"],
+  "globalEnv": ["NODE_ENV"],
+  "tasks": {
+    "//#db:generate": {
+      "cache": false
+    },
+    "build": {
+      "dependsOn": ["//#db:generate", "^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      "dependsOn": ["//#db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["//#db:generate"]
+    },
+    "typecheck": {
+      "dependsOn": ["//#db:generate"]
+    },
+    "test": {
+      "dependsOn": ["//#db:generate"]
+    },
+    "lint:fix": {
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@print-karo/web-machine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3002",
+    "build": "next build",
+    "start": "next start --port 3002",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .next .turbo"
+  },
+  "dependencies": {
+    "@print-karo/types": "workspace:*",
+    "@print-karo/ui": "workspace:*",
+    "lucide-react": "^0.469.0",
+    "next": "^15.1.4",
+    "next-themes": "^0.4.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@print-karo/config-eslint": "workspace:*",
+    "@print-karo/config-tsconfig": "workspace:*",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.4",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3"
+  }
+}

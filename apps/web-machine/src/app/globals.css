@@ -1,0 +1,5 @@
+/* App stylesheet — pulls in the shared Print Karo theme + Tailwind. */
+@import '@print-karo/ui/styles.css';
+
+/* Ensure Tailwind scans the shared UI package for class usage. */
+@source '../../../../packages/ui/src/**/*.{ts,tsx}';

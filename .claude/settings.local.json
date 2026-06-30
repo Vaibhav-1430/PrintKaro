@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(taskkill /F /IM node.exe 2>$null)",
+      "PowerShell(pnpm --filter @print-karo/database exec prisma generate 2>&1)",
+      "PowerShell(if \\($?\\) {})",
+      "PowerShell(pnpm --filter @print-karo/types typecheck 2>&1)",
+      "PowerShell(pnpm --filter @print-karo/types build 2>&1)",
+      "PowerShell(pnpm install 2>&1)",
+      "PowerShell(pnpm --filter @print-karo/api typecheck 2>&1)",
+      "PowerShell(pnpm --filter @print-karo/api lint 2>&1)",
+      "PowerShell(pnpm --filter @print-karo/machine-agent build 2>&1)",
+      "PowerShell(pnpm --filter @print-karo/web-admin typecheck 2>&1)",
+      "PowerShell(pnpm --filter @print-karo/web-machine typecheck 2>&1)"
+    ]
+  }
+}

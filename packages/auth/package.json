@@ -1,0 +1,52 @@
+{
+  "name": "@print-karo/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./client": {
+      "import": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "require": {
+        "types": "./dist/client.d.cts",
+        "default": "./dist/client.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@print-karo/database": "workspace:*",
+    "better-auth": "^1.1.14"
+  },
+  "devDependencies": {
+    "@print-karo/config-eslint": "workspace:*",
+    "@print-karo/config-tsconfig": "workspace:*",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4",
+    "eslint": "^9.17.0",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  }
+}
