@@ -11,7 +11,13 @@
       "PowerShell(pnpm --filter @print-karo/api lint 2>&1)",
       "PowerShell(pnpm --filter @print-karo/machine-agent build 2>&1)",
       "PowerShell(pnpm --filter @print-karo/web-admin typecheck 2>&1)",
-      "PowerShell(pnpm --filter @print-karo/web-machine typecheck 2>&1)"
+      "PowerShell(pnpm --filter @print-karo/web-machine typecheck 2>&1)",
+      "Bash(node -e \"try{require.resolve\\('sharp'\\);console.log\\('sharp available'\\)}catch{console.log\\('no sharp'\\)}\")",
+      "Bash(node -e \"try{require.resolve\\('canvas'\\);console.log\\('canvas available'\\)}catch{console.log\\('no canvas'\\)}\")",
+      "Bash(node -e ' *)",
+      "Bash(node \"C:/Users/Vaibhav/AppData/Local/Temp/claude/d--Projects-PrintKaro/44de36e9-fd23-4822-b720-cd6fd4ea68f5/scratchpad/inject-head.mjs\" \"d:/Projects/PrintKaro/frontend\")",
+      "Bash(node --check upload.js)",
+      "Bash(node --check dashboard.js)"
     ]
   }
 }

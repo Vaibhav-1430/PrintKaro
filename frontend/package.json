@@ -1,0 +1,16 @@
+{
+  "name": "@print-karo/frontend-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Print Karo premium vanilla customer frontend (opt-in tests; not part of the monorepo pipeline).",
+  "type": "module",
+  "scripts": {
+    "serve": "npx --yes serve -l 4173 .",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "lighthouse": "npx --yes lighthouse http://localhost:4173/index.html --budget-path=./tests/budget.json --preset=desktop --only-categories=performance,accessibility,best-practices,seo --chrome-flags=\"--headless=new\" --output=json --output=html --output-path=./tests/lighthouse-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
+}

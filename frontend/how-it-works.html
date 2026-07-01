@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- PK:HEAD -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' http://localhost:4000 https: wss:; manifest-src 'self'" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://printkaro.app/how-it-works.html" />
+    <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#08090c" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta property="og:site_name" content="Print Karo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How it works — Print Karo" />
+    <meta property="og:description" content="Upload, pay, get a PIN, and collect your print. Four simple steps." />
+    <meta property="og:url" content="https://printkaro.app/how-it-works.html" />
+    <meta property="og:image" content="https://printkaro.app/assets/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="How it works — Print Karo" />
+    <meta name="twitter:description" content="Upload, pay, get a PIN, and collect your print. Four simple steps." />
+    <meta name="twitter:image" content="https://printkaro.app/assets/icons/icon-512.png" />
+    <!-- /PK:HEAD -->
+    <title>How it works — Print Karo</title>
+    <meta name="description" content="Upload, pay, get a PIN, and collect your print. Four simple steps." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/css/tokens.css" />
+    <link rel="stylesheet" href="assets/css/base.css" />
+    <link rel="stylesheet" href="assets/css/components.css" />
+    <link rel="stylesheet" href="assets/css/animations.css" />
+    <link rel="stylesheet" href="assets/css/landing.css" />
+    <script>
+      document.documentElement.setAttribute('data-theme', localStorage.getItem('pk_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  </head>
+  <body data-active="how-it-works.html">
+    <header id="nav"></header>
+    <main>
+      <section class="hero" style="padding-bottom: var(--sp-7)">
+        <div class="hero-bg"></div>
+        <div class="container hero-inner">
+          <span class="eyebrow" data-reveal>How it works</span>
+          <h1 data-reveal>From file to print in <span class="gradient-text">four steps.</span></h1>
+          <p class="lead" data-reveal>No app, no queue, no dead printers. Here's the whole journey.</p>
+          <div class="hero-cta" data-reveal><a class="btn btn-primary btn-lg" href="upload.html">Try it now</a></div>
+        </div>
+      </section>
+
+      <section class="section-sm">
+        <div class="container">
+          <div class="steps" data-stagger>
+            <div class="card step"><h3>Upload</h3><p>Drag in a PDF, Word, PowerPoint or image. We validate it, count pages, and convert to print-ready PDF automatically.</p></div>
+            <div class="card step"><h3>Choose &amp; pay</h3><p>Pick copies, colour, paper size and duplex. See the exact price, then pay securely in seconds.</p></div>
+            <div class="card step"><h3>Verify your phone</h3><p>Confirm your number so your orders stay linked to you. Creating a full account is optional.</p></div>
+            <div class="card step"><h3>Collect with a PIN</h3><p>Enter your one-time PIN at the machine. It prints silently and the PIN expires right after.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="cta-band" data-reveal="scale">
+            <h2>Ready to try it?</h2>
+            <p>Upload your first document — it takes under a minute.</p>
+            <a class="btn btn-primary btn-lg" href="upload.html">Start printing</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer id="footer"></footer>
+    <script type="module" src="assets/js/page.js"></script>
+    <!-- PK:BOOT -->
+    <script type="module">
+      import { initPWA } from './assets/js/sw-register.js';
+      import { initAnalytics } from './assets/js/analytics.js';
+      initPWA();
+      initAnalytics();
+    </script>
+    <!-- /PK:BOOT -->
+  </body>
+</html>

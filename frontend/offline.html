@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- PK:HEAD -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' http://localhost:4000 https: wss:; manifest-src 'self'" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://printkaro.app/offline.html" />
+    <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#08090c" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta property="og:site_name" content="Print Karo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Print Karo" />
+    <meta property="og:description" content="Cloud printing for campuses." />
+    <meta property="og:url" content="https://printkaro.app/offline.html" />
+    <meta property="og:image" content="https://printkaro.app/assets/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Print Karo" />
+    <meta name="twitter:description" content="Cloud printing for campuses." />
+    <meta name="twitter:image" content="https://printkaro.app/assets/icons/icon-512.png" />
+    <!-- /PK:HEAD -->
+    <title>Offline — Print Karo</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/css/tokens.css" />
+    <link rel="stylesheet" href="assets/css/base.css" />
+    <link rel="stylesheet" href="assets/css/components.css" />
+    <link rel="stylesheet" href="assets/css/app.css" />
+    <script>
+      document.documentElement.setAttribute('data-theme', localStorage.getItem('pk_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    </script>
+  </head>
+  <body>
+    <main class="app-main center" style="min-height: 100vh; text-align: center">
+      <div class="container" style="max-width: 460px">
+        <div class="success-ring" style="background: var(--surface-2); color: var(--text-3)">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+        </div>
+        <h1 style="font-size: var(--fs-2xl)">You're offline</h1>
+        <p style="margin: 12px 0 28px">
+          Print Karo needs a connection to upload and print. Your saved pages are still available —
+          reconnect to continue where you left off.
+        </p>
+        <div class="flex" style="gap: 12px; justify-content: center">
+          <button class="btn btn-primary btn-lg" onclick="location.reload()">Try again</button>
+          <a class="btn btn-outline btn-lg" href="index.html">Home</a>
+        </div>
+      </div>
+    </main>
+    <script>
+      window.addEventListener('online', () => location.reload());
+    </script>
+    <!-- PK:BOOT -->
+    <script type="module">
+      import { initPWA } from './assets/js/sw-register.js';
+      import { initAnalytics } from './assets/js/analytics.js';
+      initPWA();
+      initAnalytics();
+    </script>
+    <!-- /PK:BOOT -->
+  </body>
+</html>

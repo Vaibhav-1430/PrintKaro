@@ -1,0 +1,116 @@
+/* Print Karo — design tokens. Dual theme via [data-theme] on <html>.
+   Palette: near-black / white with a blue→violet accent. Apple/Stripe/Linear feel. */
+
+:root {
+  /* Brand accent (constant across themes) */
+  --brand-500: #2563eb;
+  --brand-600: #1d4ed8;
+  --brand-400: #60a5fa;
+  --violet-500: #7c3aed;
+  --brand-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --brand-gradient-soft: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(124, 58, 237, 0.14));
+
+  /* Semantic */
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.14);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+
+  /* Radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-2xl: 32px;
+  --r-full: 999px;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+  --sp-10: 128px;
+
+  /* Type */
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.875rem;
+  --fs-3xl: 2.5rem;
+  --fs-4xl: 3.25rem;
+  --fs-5xl: 4.25rem;
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.3;
+  --lh-normal: 1.6;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 0.18s;
+  --dur: 0.32s;
+  --dur-slow: 0.6s;
+
+  --maxw: 1200px;
+  --nav-h: 68px;
+}
+
+/* ---- Light (default) ---- */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-subtle: #f7f8fa;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --glass: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(15, 17, 23, 0.08);
+  --border: rgba(15, 17, 23, 0.1);
+  --border-strong: rgba(15, 17, 23, 0.16);
+  --text: #0a0a0b;
+  --text-2: #3f434d;
+  --text-3: #6b7280;
+  --text-inv: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(15, 17, 23, 0.06), 0 1px 3px rgba(15, 17, 23, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 17, 23, 0.08), 0 2px 6px rgba(15, 17, 23, 0.05);
+  --shadow-lg: 0 24px 48px -12px rgba(15, 17, 23, 0.18);
+  --glow: 0 0 0 1px rgba(37, 99, 235, 0.35), 0 8px 30px rgba(37, 99, 235, 0.25);
+  --hero-grid: rgba(15, 17, 23, 0.04);
+}
+
+/* ---- Dark ---- */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #08090c;
+  --bg-subtle: #0c0e13;
+  --bg-elevated: #111318;
+  --surface: #111318;
+  --surface-2: #171a21;
+  --glass: rgba(20, 23, 30, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f5f7;
+  --text-2: #b6bcc8;
+  --text-3: #7f8796;
+  --text-inv: #08090c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+  --glow: 0 0 0 1px rgba(96, 165, 250, 0.4), 0 8px 40px rgba(37, 99, 235, 0.4);
+  --hero-grid: rgba(255, 255, 255, 0.045);
+}

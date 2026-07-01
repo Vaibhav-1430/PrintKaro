@@ -1,0 +1,22 @@
+# Print Karo — robots
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /pricing.html
+Allow: /machines.html
+Allow: /how-it-works.html
+Allow: /about.html
+Allow: /contact.html
+Allow: /faq.html
+
+# App / flow pages carry per-user state — keep them out of the index.
+Disallow: /upload.html
+Disallow: /options.html
+Disallow: /auth.html
+Disallow: /pay.html
+Disallow: /success.html
+Disallow: /dashboard.html
+Disallow: /profile.html
+Disallow: /offline.html
+
+Sitemap: https://printkaro.app/sitemap.xml
