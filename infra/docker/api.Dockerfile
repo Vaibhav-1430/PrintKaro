@@ -37,6 +37,6 @@ COPY --from=build --chown=nestjs:nodejs /app/packages/database/prisma ./prisma
 USER nestjs
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:4000/health || exit 1
+  CMD wget -qO- https://printkaro-b9r0.onrender.com/health || exit 1
 
 CMD ["node", "dist/main.js"]

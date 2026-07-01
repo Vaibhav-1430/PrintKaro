@@ -71,10 +71,10 @@ pnpm dev
 | Customer | http://localhost:3000 |
 | Admin | http://localhost:3001 |
 | Machine | http://localhost:3002 |
-| API | http://localhost:4000 |
-| API health | http://localhost:4000/health |
-| API readiness | http://localhost:4000/ready |
-| Better Auth | http://localhost:4000/api/auth/* |
+| API | https://printkaro-b9r0.onrender.com |
+| API health | https://printkaro-b9r0.onrender.com/health |
+| API readiness | https://printkaro-b9r0.onrender.com/ready |
+| Better Auth | https://printkaro-b9r0.onrender.com/api/auth/* |
 
 ## Common scripts
 
