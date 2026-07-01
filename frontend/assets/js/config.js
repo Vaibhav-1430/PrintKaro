@@ -3,30 +3,13 @@
 // before this module loads (e.g. an inline <script> injected by the host).
 
 export const CONFIG = {
-  API_BASE: window.PK_API_BASE || 'http://localhost:4000',
+  API_BASE: window.PK_API_BASE || 'https://printkaro-b9r0.onrender.com',
   // Better Auth is mounted under /api/auth on the same API server.
-  AUTH_BASE: (window.PK_API_BASE || 'http://localhost:4000') + '/api/auth',
+  AUTH_BASE: (window.PK_API_BASE || 'https://printkaro-b9r0.onrender.com') + '/api/auth',
   CURRENCY: '₹',
   MAX_UPLOAD_BYTES: 104_857_600, // 100 MB (mirrors backend default)
   ALLOWED_TYPES: ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg'],
   PIN_TTL_HOURS: 6,
-
-  // Canonical site origin (for SEO canonical/OG URLs + sitemap).
-  SITE_URL: window.PK_SITE_URL || 'https://printkaro.app',
-
-  // Object storage origin (for CSP connect-src on presigned PUT/GET). '*' allows any
-  // https origin for dev fake-storage; tighten to your R2 host in production.
-  STORAGE_ORIGIN: window.PK_STORAGE_ORIGIN || 'https://*.r2.cloudflarestorage.com',
-
-  // Analytics — third-party scripts load ONLY when an id is set here (empty = off).
-  ANALYTICS: {
-    ga: window.PK_GA_ID || '', // e.g. 'G-XXXXXXX'
-    clarity: window.PK_CLARITY_ID || '', // e.g. 'abcdefghij'
-  },
-
-  // Machine dashboard refresh + notification poll cadence (ms).
-  MACHINE_REFRESH_MS: 20_000,
-  NOTIFY_POLL_MS: 15_000,
   // Where to send the user after a successful sign-in during the flow.
   ROUTES: {
     home: 'index.html',
