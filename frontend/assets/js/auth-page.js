@@ -1,51 +1,28 @@
-// Print Karo frontend — auth page (Name → Phone → OTP over the real session).
+// Print Karo frontend — auth page (phone + SMS OTP, Better Auth phoneNumber plugin).
+// Step 1: name + phone → the API texts a one-time code.
+// Step 2: 6-digit code → verified server-side; the HttpOnly session cookie is
+// set by the API, confirmed via get-session, then the user rejoins the flow.
+// First-time numbers become accounts automatically — no sign-up form.
 import { mountChrome } from './partials.js';
 import { initAnimations } from './animations.js';
 import { initRipples, toast, loadingButton } from './ui.js';
-import { completePhoneAuth, currentUser } from './auth.js';
+import { currentUser, normalizePhone, requestOtp, verifyOtp } from './auth.js';
 import { CONFIG } from './config.js';
-import { $, $$, store } from './utils.js';
+import { $, store } from './utils.js';
 
-let draft = { name: '', phone: '' };
+const RESEND_COOLDOWN_SEC = 30;
 
-function show(step) {
-  $('#step-phone').classList.toggle('hidden', step !== 'phone');
-  $('#step-otp').classList.toggle('hidden', step !== 'otp');
-  if (step === 'otp') {
-    $('#otp-phone').textContent = '+91 ' + draft.phone;
-    setTimeout(() => $('#otp-boxes input')?.focus(), 60);
-  }
+const state = { phone: null, name: '', resendTimer: null };
+
+function showError(id, msg) {
+  const err = $(id);
+  err.textContent = msg;
+  err.classList.remove('hidden');
 }
 
-function wireOtpBoxes() {
-  const inputs = $$('#otp-boxes input');
-  inputs.forEach((inp, i) => {
-    inp.addEventListener('input', () => {
-      inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
-      inp.classList.toggle('filled', !!inp.value);
-      if (inp.value && i < inputs.length - 1) inputs[i + 1].focus();
-    });
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i - 1].focus();
-    });
-    inp.addEventListener('paste', (e) => {
-      e.preventDefault();
-      const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
-      digits.split('').forEach((d, j) => {
-        if (inputs[j]) {
-          inputs[j].value = d;
-          inputs[j].classList.add('filled');
-        }
-      });
-      inputs[Math.min(digits.length, inputs.length - 1)].focus();
-    });
-  });
-}
-
-function otpValue() {
-  return $$('#otp-boxes input')
-    .map((i) => i.value)
-    .join('');
+function hideErrors() {
+  $('#phone-err').classList.add('hidden');
+  $('#otp-err').classList.add('hidden');
 }
 
 function returnToFlow() {
@@ -54,43 +31,106 @@ function returnToFlow() {
   window.location.href = to;
 }
 
-function onSendOtp(e) {
+function maskedPhone(phone) {
+  return phone.replace(/^(\+\d{2})\d+(\d{4})$/, '$1 ••••• $2');
+}
+
+function startResendCooldown() {
+  const btn = $('#resend-otp');
+  let left = RESEND_COOLDOWN_SEC;
+  btn.disabled = true;
+  btn.textContent = `Resend in ${left}s`;
+  clearInterval(state.resendTimer);
+  state.resendTimer = setInterval(() => {
+    left -= 1;
+    if (left <= 0) {
+      clearInterval(state.resendTimer);
+      btn.disabled = false;
+      btn.textContent = 'Resend code';
+      return;
+    }
+    btn.textContent = `Resend in ${left}s`;
+  }, 1000);
+}
+
+function showOtpStep() {
+  $('#phone-form').classList.add('hidden');
+  $('#otp-form').classList.remove('hidden');
+  $('#auth-title').textContent = 'Check your messages';
+  $('#auth-sub').textContent = 'Enter the code to continue.';
+  $('#otp-sent-to').textContent = `Code sent to ${maskedPhone(state.phone)}.`;
+  $('#otp').value = '';
+  $('#otp').focus();
+  startResendCooldown();
+}
+
+function showPhoneStep() {
+  clearInterval(state.resendTimer);
+  $('#otp-form').classList.add('hidden');
+  $('#phone-form').classList.remove('hidden');
+  $('#auth-title').textContent = 'Continue with your phone';
+  $('#auth-sub').textContent = 'We’ll text you a one-time code — no password, no sign-up forms.';
+  $('#phone').focus();
+}
+
+async function onSendOtp(e) {
   e.preventDefault();
-  const name = $('#name').value.trim();
-  const phone = $('#phone').value.replace(/\D/g, '');
-  const err = $('#phone-err');
-  if (phone.length !== 10) {
-    err.textContent = 'Enter a valid 10-digit phone number.';
-    err.classList.remove('hidden');
+  hideErrors();
+
+  state.name = $('#name').value.trim();
+  const phone = normalizePhone($('#phone').value);
+  if (!phone) {
+    showError('#phone-err', 'Enter a valid mobile number (10 digits, or with country code).');
     return;
   }
-  err.classList.add('hidden');
-  draft = { name, phone };
-  store.set(CONFIG.KEYS.profile, draft);
-  // Prefill display name from digits if empty.
-  toast('Verification code sent', 'success', 2000);
-  show('otp');
+  state.phone = phone;
+  // Remember the draft so the rest of the flow (and a return visit) can prefill.
+  store.set(CONFIG.KEYS.profile, { name: state.name, phone });
+
+  const restore = loadingButton($('#send-otp'), 'Sending…');
+  try {
+    await requestOtp(phone);
+    toast('Code sent', 'success');
+    showOtpStep();
+  } catch (ex) {
+    showError('#phone-err', ex.message || 'Could not send the code. Please try again.');
+  } finally {
+    restore();
+  }
 }
 
 async function onVerifyOtp(e) {
   e.preventDefault();
-  const err = $('#otp-err');
-  const code = otpValue();
+  hideErrors();
+
+  const code = $('#otp').value.replace(/\D/g, '');
   if (code.length !== 6) {
-    err.textContent = 'Enter all 6 digits.';
-    err.classList.remove('hidden');
+    showError('#otp-err', 'Enter the 6-digit code from the SMS.');
     return;
   }
-  err.classList.add('hidden');
+
   const restore = loadingButton($('#verify-otp'), 'Verifying…');
   try {
-    await completePhoneAuth(draft);
-    toast('Verified — welcome!', 'success');
+    await verifyOtp(state.phone, code, state.name);
+    toast('You’re in!', 'success');
     returnToFlow();
   } catch (ex) {
-    err.textContent = ex.message || 'Verification failed. Please try again.';
-    err.classList.remove('hidden');
+    showError('#otp-err', ex.message || 'That code didn’t match. Please try again.');
     restore();
+  }
+}
+
+async function onResend() {
+  hideErrors();
+  const btn = $('#resend-otp');
+  btn.disabled = true;
+  try {
+    await requestOtp(state.phone);
+    toast('New code sent', 'success');
+    startResendCooldown();
+  } catch (ex) {
+    showError('#otp-err', ex.message || 'Could not resend the code.');
+    btn.disabled = false;
   }
 }
 
@@ -98,9 +138,8 @@ async function main() {
   await mountChrome();
   initRipples();
   initAnimations();
-  wireOtpBoxes();
 
-  // Already signed in? Skip straight to where they were headed.
+  // Already signed in (valid server-side session)? Skip straight ahead.
   const user = await currentUser();
   if (user) {
     returnToFlow();
@@ -108,17 +147,19 @@ async function main() {
   }
 
   const saved = store.get(CONFIG.KEYS.profile);
-  if (saved) {
-    $('#name').value = saved.name || '';
-    $('#phone').value = saved.phone || '';
-  }
+  if (saved && saved.name) $('#name').value = saved.name;
+  if (saved && saved.phone) $('#phone').value = saved.phone;
 
-  $('#step-phone').addEventListener('submit', onSendOtp);
-  $('#step-otp').addEventListener('submit', onVerifyOtp);
-  $('#edit-phone').addEventListener('click', () => show('phone'));
-  $('#resend').addEventListener('click', () => toast('Code re-sent', 'info', 1800));
+  $('#phone-form').addEventListener('submit', onSendOtp);
+  $('#otp-form').addEventListener('submit', onVerifyOtp);
+  $('#change-number').addEventListener('click', showPhoneStep);
+  $('#resend-otp').addEventListener('click', onResend);
 
-  show('phone');
+  // Auto-submit when 6 digits are typed/pasted (mobile OTP autofill).
+  $('#otp').addEventListener('input', () => {
+    const digits = $('#otp').value.replace(/\D/g, '');
+    if (digits.length === 6) $('#otp-form').requestSubmit();
+  });
 }
 
 main();

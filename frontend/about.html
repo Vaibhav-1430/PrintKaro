@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- PK:HEAD -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' http://localhost:4000 https: wss:; manifest-src 'self'" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' https://printkaro-b9r0.onrender.com https: wss:; manifest-src 'self'"
+    />
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://printkaro.app/about.html" />
     <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
@@ -27,14 +30,21 @@
     <meta name="description" content="Print Karo makes campus printing effortless." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="assets/css/tokens.css" />
     <link rel="stylesheet" href="assets/css/base.css" />
     <link rel="stylesheet" href="assets/css/components.css" />
     <link rel="stylesheet" href="assets/css/animations.css" />
     <link rel="stylesheet" href="assets/css/landing.css" />
     <script>
-      document.documentElement.setAttribute('data-theme', localStorage.getItem('pk_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      document.documentElement.setAttribute(
+        'data-theme',
+        localStorage.getItem('pk_theme') ||
+          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+      );
     </script>
   </head>
   <body data-active="">
@@ -47,15 +57,40 @@
             <h1>Campus printing, finally effortless.</h1>
           </div>
           <div class="stack" style="gap: 20px" data-reveal>
-            <p>Every student knows the pain: a looming deadline, a USB stick, a walk to the library, and a printer that's out of paper. Print Karo exists to make that whole ordeal disappear.</p>
-            <p>Upload from anywhere, pay in seconds, and collect your print with a secure one-time PIN. We health-check every machine so you never pay for a printer that can't deliver — and your documents stay private, downloaded to the machine only after your PIN is verified and deleted right after.</p>
-            <p>We're building the printing layer for campuses: fast, fair, and beautifully simple.</p>
+            <p>
+              Every student knows the pain: a looming deadline, a USB stick, a walk to the library,
+              and a printer that's out of paper. Print Karo exists to make that whole ordeal
+              disappear.
+            </p>
+            <p>
+              Upload from anywhere, pay in seconds, and collect your print with a secure one-time
+              PIN. We health-check every machine so you never pay for a printer that can't deliver —
+              and your documents stay private, downloaded to the machine only after your PIN is
+              verified and deleted right after.
+            </p>
+            <p>
+              We're building the printing layer for campuses: fast, fair, and beautifully simple.
+            </p>
           </div>
           <div class="card stats" data-reveal style="margin-top: 40px; padding: 32px">
-            <div class="stat"><div class="num"><span data-count="120" data-suffix="k+">0</span></div><div class="lbl">Pages printed</div></div>
-            <div class="stat"><div class="num"><span data-count="45">0</span></div><div class="lbl">Machines</div></div>
-            <div class="stat"><div class="num"><span data-count="12">0</span></div><div class="lbl">Campuses</div></div>
-            <div class="stat"><div class="num"><span data-count="99.9" data-decimals="1" data-suffix="%">0</span></div><div class="lbl">Uptime</div></div>
+            <div class="stat">
+              <div class="num"><span data-count="120" data-suffix="k+">0</span></div>
+              <div class="lbl">Pages printed</div>
+            </div>
+            <div class="stat">
+              <div class="num"><span data-count="45">0</span></div>
+              <div class="lbl">Machines</div>
+            </div>
+            <div class="stat">
+              <div class="num"><span data-count="12">0</span></div>
+              <div class="lbl">Campuses</div>
+            </div>
+            <div class="stat">
+              <div class="num">
+                <span data-count="99.9" data-decimals="1" data-suffix="%">0</span>
+              </div>
+              <div class="lbl">Uptime</div>
+            </div>
           </div>
         </div>
       </section>

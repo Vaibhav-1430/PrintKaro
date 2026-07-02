@@ -8,7 +8,7 @@ let ready = false;
 export function initAnalytics() {
   if (ready) return;
   ready = true;
-  const { ga, clarity } = CONFIG.ANALYTICS;
+  const { ga, clarity } = CONFIG.ANALYTICS || {};
 
   if (ga) {
     window.dataLayer = window.dataLayer || [];

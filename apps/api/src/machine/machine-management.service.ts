@@ -44,6 +44,37 @@ export class MachineManagementService {
     );
   }
 
+  /**
+   * Public machine directory for the customer flow (landing page, machine
+   * picker before sign-in). Only ACTIVE machines, only non-sensitive fields.
+   */
+  async publicDirectory(): Promise<
+    Array<{
+      id: string;
+      code: string;
+      name: string;
+      online: boolean;
+      gateResult: string;
+      location: { college: string | null; building: string | null; room: string | null };
+      latitude: number | null;
+      longitude: number | null;
+      lastHeartbeatAt: string | null;
+    }>
+  > {
+    const machines = await this.repo.listMachines({ status: 'ACTIVE' }, 200);
+    return machines.map((m) => ({
+      id: m.id,
+      code: m.code,
+      name: m.name,
+      online: this.isOnline(m.lastHeartbeatAt),
+      gateResult: m.health?.gateResult ?? 'BLOCKED',
+      location: { college: m.college, building: m.building, room: m.room },
+      latitude: m.latitude,
+      longitude: m.longitude,
+      lastHeartbeatAt: m.lastHeartbeatAt?.toISOString() ?? null,
+    }));
+  }
+
   async list(actor: AuthPrincipal, limit = 50, cursor?: string): Promise<MachineSummary[]> {
     const where =
       actor.role === ROLES.OPERATOR

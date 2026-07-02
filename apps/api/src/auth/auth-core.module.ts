@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { authProvider } from './auth.provider';
 import { AUTH_INSTANCE } from './auth.tokens';
 import { EmailModule } from '../email/email.module';
+import { SmsModule } from '../sms/sms.module';
 
 /**
  * Provides the singleton Better Auth instance (AUTH_INSTANCE) app-wide.
@@ -10,7 +11,7 @@ import { EmailModule } from '../email/email.module';
  */
 @Global()
 @Module({
-  imports: [EmailModule],
+  imports: [EmailModule, SmsModule],
   providers: [authProvider],
   exports: [AUTH_INSTANCE],
 })

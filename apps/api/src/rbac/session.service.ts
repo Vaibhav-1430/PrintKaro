@@ -31,7 +31,14 @@ export class SessionService {
     // Authoritative role/status come from our DB, not the cookie payload.
     const dbUser = await this.prisma.client.user.findFirst({
       where: { id: session.user.id, deletedAt: null },
-      select: { role: true, status: true, emailVerified: true, email: true },
+      select: {
+        role: true,
+        status: true,
+        emailVerified: true,
+        email: true,
+        phoneNumber: true,
+        phoneNumberVerified: true,
+      },
     });
     if (!dbUser) return null;
 
@@ -42,8 +49,12 @@ export class SessionService {
       type: 'USER',
       userId: session.user.id,
       email: dbUser.email,
+      phoneNumber: dbUser.phoneNumber,
       role,
       emailVerified: dbUser.emailVerified,
+      phoneNumberVerified: dbUser.phoneNumberVerified,
+      // Customers verify by phone OTP; staff by email. Either confirms identity.
+      verified: dbUser.emailVerified || dbUser.phoneNumberVerified,
       status: dbUser.status,
       permissions,
       sessionId: session.session.id,

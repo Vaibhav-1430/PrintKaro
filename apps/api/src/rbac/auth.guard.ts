@@ -62,8 +62,8 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!allowUnverified && !principal.emailVerified) {
-      throw new ForbiddenException('Email verification required');
+    if (!allowUnverified && !principal.verified) {
+      throw new ForbiddenException('Account verification required');
     }
 
     this.enforceRoles(context, principal.role);

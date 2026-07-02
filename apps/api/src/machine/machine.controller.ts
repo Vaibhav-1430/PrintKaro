@@ -1,4 +1,4 @@
-import { Controller, Post, Req } from '@nestjs/common';
+import { Controller, Get, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import {
   machineLoginSchema,
@@ -7,6 +7,7 @@ import {
   type MachineRefreshInput,
 } from '@print-karo/types';
 import { MachineService } from './machine.service';
+import { MachineManagementService } from './machine-management.service';
 import { Public } from '../rbac/decorators';
 import { ZodBody } from '../common/zod-body.decorator';
 
@@ -17,7 +18,10 @@ import { ZodBody } from '../common/zod-body.decorator';
  */
 @Controller('machine')
 export class MachineController {
-  constructor(private readonly machineService: MachineService) {}
+  constructor(
+    private readonly machineService: MachineService,
+    private readonly management: MachineManagementService,
+  ) {}
 
   @Post('login')
   @Public()
@@ -29,5 +33,16 @@ export class MachineController {
   @Public()
   refresh(@ZodBody(machineRefreshSchema) body: MachineRefreshInput, @Req() req: Request) {
     return this.machineService.refresh(body.refreshToken, req);
+  }
+
+  /**
+   * Public machine directory: name, location and live availability only.
+   * Powers the landing page and the pre-auth machine picker in the customer
+   * flow (customers pick a machine before they have an account).
+   */
+  @Get('directory')
+  @Public()
+  directory() {
+    return this.management.publicDirectory();
   }
 }

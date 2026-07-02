@@ -1,29 +1,43 @@
 // Print Karo frontend — session helpers + route guard.
-// The premium "Name → Phone → OTP" screen (auth.js page controller lives inline
-// in auth.html's module) ultimately establishes a real session via the existing
-// Better Auth email/password endpoints — no backend change. Phone/name are saved
-// to the profile. There is no server OTP endpoint (documented in the README), so
-// the OTP step is a UX layer over the real login.
+// Customers authenticate with phone + SMS OTP (Better Auth phoneNumber plugin):
+// the API sets an HttpOnly session cookie once the code is verified, and every
+// check here re-validates that cookie against /api/auth/get-session before
+// trusting it. No passwords, no client-side auth state.
 import { api, ApiError } from './api.js';
 import { CONFIG } from './config.js';
 import { store } from './utils.js';
 
 let cachedUser;
 
-/** Returns the signed-in user, or null. Cached per page load. */
+/**
+ * Returns the signed-in user, or null. Cached per page load.
+ * The Better Auth session endpoint is the source of truth; the richer
+ * /auth/me profile (adds phone/profile fields) is layered on top.
+ */
 export async function currentUser() {
   if (cachedUser !== undefined) return cachedUser;
+  const session = await api.session();
+  if (!session) {
+    cachedUser = null;
+    return null;
+  }
   try {
     cachedUser = await api.me();
-  } catch (e) {
-    if (e instanceof ApiError && (e.status === 401 || e.status === 403)) cachedUser = null;
-    else cachedUser = null;
+  } catch {
+    cachedUser = session.user;
   }
   return cachedUser;
 }
 
 export async function isAuthed() {
   return (await currentUser()) !== null;
+}
+
+/** Fresh (uncached) session check — used to gate sensitive actions like uploads. */
+export async function verifySession() {
+  const session = await api.session();
+  if (!session) cachedUser = null;
+  return session ? session.user : null;
 }
 
 /** Redirect to the auth screen, remembering where to return. */
@@ -48,28 +62,54 @@ export async function signOut() {
 }
 
 /**
- * Establish a session for a phone-first flow. Because the backend auth is
- * email/password, we derive a deterministic credential from the phone number so
- * the same phone always maps to the same account (link "previous orders via
- * verified phone" — same account = same orders). Tries sign-in, falls back to
- * sign-up. Then stores the display name + phone on the profile.
+ * Normalise user phone input to E.164. Accepts "98765 43210", "098765...",
+ * "+91 98765-43210" etc. Bare 10-digit numbers are treated as Indian (+91).
+ * Returns null when the input can't be a valid number.
  */
-export async function completePhoneAuth({ name, phone }) {
-  const digits = String(phone).replace(/\D/g, '');
-  const email = `pk_${digits}@phone.printkaro.local`;
-  const password = `PK-${digits}-verified`;
+export function normalizePhone(raw) {
+  const cleaned = String(raw || '').replace(/[\s\-().]/g, '');
+  if (/^\+[1-9]\d{7,14}$/.test(cleaned)) return cleaned;
+  const digits = cleaned.replace(/^0+/, '');
+  if (/^[6-9]\d{9}$/.test(digits)) return `+91${digits}`;
+  return null;
+}
 
-  try {
-    await api.signIn(email, password);
-  } catch {
-    // First time for this phone → create the account.
-    await api.signUp(name || `PK ${digits.slice(-4)}`, email, password);
-    // Some Better Auth configs require a follow-up sign-in to set the cookie.
-    await api.signIn(email, password).catch(() => undefined);
+/** Ask the API to text a one-time code to this phone (E.164). */
+export function requestOtp(phoneNumber) {
+  return api.sendPhoneOtp(phoneNumber);
+}
+
+/**
+ * Verify the OTP. On success Better Auth creates the account (first time) or
+ * signs the customer in, and sets the session cookie — which we confirm before
+ * returning. New accounts get the phone number as a placeholder name, so we
+ * write the real name (collected pre-OTP) right after the session lands.
+ */
+export async function verifyOtp(phoneNumber, code, name) {
+  await api.verifyPhoneOtp(phoneNumber, code);
+  const user = await confirmSessionEstablished();
+
+  const trimmed = (name || '').trim();
+  const placeholder = !user.name || user.name === phoneNumber || /^\+?\d+$/.test(user.name);
+  if (trimmed && (placeholder || trimmed !== user.name)) {
+    try {
+      await api.updateProfile({ name: trimmed });
+      cachedUser = undefined; // refresh with the real name
+    } catch {
+      /* non-fatal: profile name can be set later from the dashboard */
+    }
   }
+  return currentUser();
+}
 
-  // Persist the human-friendly profile fields (best-effort).
-  await api.updateProfile({ name: name || undefined, phone: digits || undefined }).catch(() => undefined);
+async function confirmSessionEstablished() {
   cachedUser = undefined; // invalidate cache
+  const user = await verifySession();
+  if (!user) {
+    throw new ApiError(
+      'Verified, but no session was established. Check that cookies are allowed for this site.',
+      401,
+    );
+  }
   return currentUser();
 }

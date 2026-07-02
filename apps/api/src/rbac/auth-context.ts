@@ -6,8 +6,12 @@ export interface AuthPrincipal {
   type: 'USER';
   userId: string;
   email: string;
+  phoneNumber: string | null;
   role: Role;
   emailVerified: boolean;
+  phoneNumberVerified: boolean;
+  /** Identity is confirmed: verified email (staff) OR verified phone (customers). */
+  verified: boolean;
   status: 'ACTIVE' | 'SUSPENDED' | 'PENDING';
   permissions: Permission[];
   sessionId: string;

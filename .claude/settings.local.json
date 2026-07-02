@@ -17,7 +17,13 @@
       "Bash(node -e ' *)",
       "Bash(node \"C:/Users/Vaibhav/AppData/Local/Temp/claude/d--Projects-PrintKaro/44de36e9-fd23-4822-b720-cd6fd4ea68f5/scratchpad/inject-head.mjs\" \"d:/Projects/PrintKaro/frontend\")",
       "Bash(node --check upload.js)",
-      "Bash(node --check dashboard.js)"
+      "Bash(node --check dashboard.js)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm -w turbo typecheck)",
+      "Bash(pnpm -w turbo test)",
+      "Bash(pnpm -w turbo lint)"
     ]
   }
 }

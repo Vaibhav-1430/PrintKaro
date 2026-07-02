@@ -16,7 +16,7 @@ frontend/
                       pricing, stats, testimonials, FAQ, CTA, footer)
   upload.html         Drag & drop upload → presigned PUT → validate
   options.html        Print options with live pricing
-  auth.html           Name → Phone → OTP-styled sign-in (see "Auth" below)
+  auth.html           Email/password sign-in & sign-up (see "Auth" below)
   pay.html            Order creation + health gate + demo payment
   success.html        Payment success, PIN, countdown, machine details
   dashboard.html      Active order + PIN, order history, saved files, invoices, profile
@@ -48,7 +48,7 @@ node apps/api/dist/main.js
 
 ### Point the frontend at your API
 
-By default the client calls `http://localhost:4000`. To override without editing
+By default the client calls `https://printkaro-b9r0.onrender.com`. To override without editing
 code, set a global before the modules load (e.g. via a reverse proxy or an inline
 snippet), or edit `assets/js/config.js`:
 
@@ -68,23 +68,31 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 This is a **config value only** — no backend code/logic is changed. `.env.example`
 is intentionally left untouched.
 
-## Auth (important, honest note)
+## Auth
 
-The existing backend uses **Better Auth email/password** with HttpOnly cookie
-sessions; it has **no SMS-OTP, phone-login, or guest-checkout endpoints**, and the
-order/upload/payment/PIN routes require a signed-in `CUSTOMER`.
+The backend uses **Better Auth email/password** with HttpOnly cookie sessions,
+and the frontend uses it directly — no fake or client-side auth:
 
-So this frontend delivers the requested **Name → Phone → OTP** *experience* as a
-premium UX layer over the real auth:
+- `auth.html` is a real **sign in / create account** form posting to
+  `/api/auth/sign-in/email` and `/api/auth/sign-up/email` with
+  `credentials: 'include'`. The server sets the session cookie.
+- After sign-in/up, the client confirms the session actually exists via
+  `GET /api/auth/get-session` before continuing; `currentUser()`/`guardPage()`
+  use the same endpoint as the source of truth.
+- Protected routes additionally require a **verified email** (server-enforced
+  403). Better Auth emails a verification link on sign-up; the upload page
+  gates unverified users behind a "verify your email" notice with a resend
+  button (`POST /api/auth/send-verification-email`).
+- The frontend (Netlify) and API (Render) are cross-site, so production
+  cookies are `SameSite=None; Secure` and every fetch uses
+  `credentials: 'include'`. The Render service must set
+  `NODE_ENV=production` and include the frontend origin in `CORS_ORIGINS`.
+- Note: cross-site cookies are treated as third-party cookies; Safari (ITP)
+  blocks them by default. Serving the API under the same site (custom domain
+  or a Netlify proxy rewrite) removes that limitation.
 
-- The OTP screen is a real, animated flow, but verification is client-side (demo).
-- On "verify", we establish a **real session** by deriving a deterministic
-  credential from the phone number (same phone → same account), so a returning
-  user's **previous orders are linked by phone** exactly as asked.
-- The display name + phone are saved to the profile (`PATCH /auth/profile`).
-
-Turning this into true SMS-OTP / real guest checkout requires **backend changes**
-that were explicitly out of scope for this task.
+The earlier phone → OTP screen was a client-side demo (no server OTP endpoint
+exists) and has been removed; real SMS-OTP still requires backend support.
 
 ## Live machine availability
 

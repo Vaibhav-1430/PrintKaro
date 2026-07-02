@@ -33,10 +33,12 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
+      phoneNumber: user.phoneNumber,
       role: user.role,
       emailVerified: user.emailVerified,
+      phoneNumberVerified: user.phoneNumberVerified,
       status: user.status,
-      phone: user.customerProfile?.phone ?? null,
+      phone: user.customerProfile?.phone ?? user.phoneNumber ?? null,
     };
   }
 
@@ -77,8 +79,10 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
+      phoneNumber: user.phoneNumber,
       role: user.role,
       emailVerified: user.emailVerified,
+      phoneNumberVerified: user.phoneNumberVerified,
       status: user.status,
     };
   }

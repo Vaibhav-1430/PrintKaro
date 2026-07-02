@@ -1,13 +1,15 @@
-// Print Karo frontend — pay orchestrator: create order (post-auth) → verify machine
-// (health gate) → initiate + simulate payment → success.
+// Print Karo frontend — pay orchestrator: materialize any deferred guest upload
+// (post-auth) → create order → verify machine (health gate) → initiate +
+// simulate payment → success.
 import { mountChrome } from './partials.js';
 import { initAnimations } from './animations.js';
 import { initRipples, toast, loadingButton } from './ui.js';
 import { renderStepper } from './stepper.js';
 import { api, ApiError } from './api.js';
 import { CONFIG } from './config.js';
-import { $, $$, store, goto, formatPaise } from './utils.js';
+import { $, $$, store, goto, formatPaise, sha256, guessMime } from './utils.js';
 import { guardPage } from './auth.js';
+import { getFile, putFile, pruneExcept } from './filecache.js';
 
 let order = null;
 
@@ -59,9 +61,50 @@ async function loadMachinePicker(draft) {
   });
 }
 
+/**
+ * Guest flow: the file was validated and cached on-device before sign-in.
+ * Now that the session exists, perform the real upload (presigned PUT +
+ * server validation) and swap the local id for the server upload id.
+ */
+async function materializeUpload(saved) {
+  if (!saved.uploadId || !String(saved.uploadId).startsWith('local-')) return saved;
+
+  $('#pay-status') && ($('#pay-status').textContent = 'Uploading your file…');
+  const file = await getFile(saved.uploadId);
+  if (!file) {
+    fatal('Your file is no longer on this device. Please upload it again.');
+    return null;
+  }
+
+  const hash = await sha256(file);
+  const ticket = await api.requestUpload({
+    filename: file.name,
+    mimeType: guessMime(file),
+    sizeBytes: file.size,
+    sha256: hash,
+  });
+  if (!ticket.duplicate) {
+    await api.putToStorage(ticket.presignedPutUrl, file);
+  }
+  const result = await api.confirmUpload(ticket.uploadId, hash);
+  if (result.status === 'REJECTED') {
+    fatal(result.rejectionReason || 'That file was rejected. Please try another.');
+    return null;
+  }
+
+  // Re-key the cached blob + stored flow state to the server id.
+  await putFile(result.id, file);
+  await pruneExcept(result.id);
+  const next = { ...saved, uploadId: result.id };
+  store.set(CONFIG.KEYS.order, next);
+  const up = store.get(CONFIG.KEYS.upload);
+  if (up) store.set(CONFIG.KEYS.upload, { ...up, uploadId: result.id, local: false });
+  return next;
+}
+
 /** Create the order from the stored draft (idempotent within a page load). */
 async function ensureOrder() {
-  const saved = store.get(CONFIG.KEYS.order);
+  let saved = store.get(CONFIG.KEYS.order);
   if (!saved) {
     fatal('Your session expired. Please start again.');
     return null;
@@ -72,6 +115,9 @@ async function ensureOrder() {
     order = await api.getOrder(saved.orderId).catch(() => null);
     if (order) return order;
   }
+
+  saved = await materializeUpload(saved);
+  if (!saved) return null;
 
   let machineId = saved.machineId;
   if (!machineId) {
@@ -86,7 +132,11 @@ async function ensureOrder() {
     await api.verifyMachine(created.id);
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
-      fatal(e.message || 'That machine is not ready right now.', CONFIG.ROUTES.options, 'Pick another machine');
+      fatal(
+        e.message || 'That machine is not ready right now.',
+        CONFIG.ROUTES.options,
+        'Pick another machine',
+      );
       return null;
     }
     throw e;
@@ -105,9 +155,7 @@ function renderPay() {
   $('#pay-amount').textContent = formatPaise(order.amountPaise);
   $('#pay-order').textContent = 'Order ' + order.orderNumber;
 
-  $$('#pay-body [data-outcome]').forEach((btn) =>
-    btn.addEventListener('click', () => pay(btn)),
-  );
+  $$('#pay-body [data-outcome]').forEach((btn) => btn.addEventListener('click', () => pay(btn)));
 }
 
 async function pay(btn) {

@@ -10,6 +10,7 @@ export const CONFIG = {
   MAX_UPLOAD_BYTES: 104_857_600, // 100 MB (mirrors backend default)
   ALLOWED_TYPES: ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg'],
   PIN_TTL_HOURS: 6,
+  MACHINE_REFRESH_MS: 30_000, // live availability poll on the machines page
   // Where to send the user after a successful sign-in during the flow.
   ROUTES: {
     home: 'index.html',

@@ -34,38 +34,58 @@ async function request(path, { method = 'GET', body, base = CONFIG.API_BASE, raw
   return json ? json.data : null;
 }
 
+/** POST to a Better Auth endpoint, throwing a friendly ApiError on failure. */
+async function authPost(path, body, fallbackMessage) {
+  const res = await fetch(`${CONFIG.AUTH_BASE}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => null);
+    const msg =
+      (j && (j.message || (j.error && j.error.message))) ||
+      (res.status === 429 ? 'Too many attempts. Please wait a minute and try again.' : null) ||
+      fallbackMessage;
+    throw new ApiError(msg, res.status);
+  }
+  return res.json().catch(() => ({}));
+}
+
 export const api = {
-  // ---- Auth (Better Auth handler under /api/auth) ----
-  async signIn(email, password) {
-    const res = await fetch(`${CONFIG.AUTH_BASE}/sign-in/email`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => null);
-      throw new ApiError((j && (j.message || j.error)) || 'Sign in failed', res.status);
-    }
-    return res.json().catch(() => ({}));
+  // ---- Auth (Better Auth phone OTP under /api/auth) ----
+  /** Send a one-time code to the phone (E.164, e.g. +919876543210). */
+  sendPhoneOtp(phoneNumber) {
+    return authPost('/phone-number/send-otp', { phoneNumber }, 'Could not send the code.');
   },
-  async signUp(name, email, password) {
-    const res = await fetch(`${CONFIG.AUTH_BASE}/sign-up/email`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => null);
-      throw new ApiError((j && (j.message || j.error)) || 'Sign up failed', res.status);
-    }
-    return res.json().catch(() => ({}));
+  /** Verify the code. On success the API sets the HttpOnly session cookie. */
+  verifyPhoneOtp(phoneNumber, code) {
+    return authPost(
+      '/phone-number/verify',
+      { phoneNumber, code },
+      'That code didn’t match. Please try again.',
+    );
   },
   signOut() {
     return fetch(`${CONFIG.AUTH_BASE}/sign-out`, { method: 'POST', credentials: 'include' }).catch(
       () => undefined,
     );
+  },
+  /**
+   * Better Auth session check (GET /api/auth/get-session). Returns
+   * { session, user } when a valid session cookie is present, else null —
+   * the endpoint responds 200 with a null body when signed out.
+   */
+  async session() {
+    try {
+      const res = await fetch(`${CONFIG.AUTH_BASE}/get-session`, { credentials: 'include' });
+      if (!res.ok) return null;
+      const j = await res.json().catch(() => null);
+      return j && j.user ? j : null;
+    } catch {
+      return null;
+    }
   },
 
   // ---- Custom auth/profile controller ----
@@ -102,15 +122,8 @@ export const api = {
   notifications: () => request('/notifications'),
   markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: 'POST' }),
 
-  // ---- Machines (best-effort: customers lack machine:view:assigned → 403) ----
-  async machines() {
-    try {
-      return await request('/admin/machines');
-    } catch (e) {
-      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) return null;
-      throw e;
-    }
-  },
+  // ---- Machines (public directory: name, location, live availability) ----
+  machines: () => request('/machine/directory'),
 
   // ---- Direct presigned upload to storage (bytes never touch the API) ----
   async putToStorage(url, file) {

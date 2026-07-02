@@ -6,12 +6,30 @@ import { renderMachines } from './machines.js';
 import { $, el } from './utils.js';
 
 const FAQS = [
-  ['Do I need an account to print?', 'No. You can upload, pay and collect your print as a guest. Creating an account is optional — it just lets you see your history, receipts and saved files, and links past orders to your phone number.'],
-  ['How do I collect my print?', 'After you pay, you get a one-time 4-digit PIN valid for 6 hours. Enter it at the machine keypad and your document prints silently, then the PIN expires.'],
-  ['What file types are supported?', 'PDF, Word (.doc/.docx), PowerPoint (.ppt/.pptx) and images (PNG/JPG). We convert everything to a print-ready PDF automatically. Max size is 100 MB.'],
-  ['What if the machine is out of paper?', 'You simply can\'t pay for an unavailable machine — our health gate blocks it. We suggest the nearest ready machine instead, so you never waste money.'],
-  ['Is my document private?', 'Yes. Files are stored encrypted and only downloaded to the machine after your PIN is verified. The file is deleted from the machine right after printing.'],
-  ['How does payment work?', 'This demo uses a secure simulated payment. Real payment gateways (UPI, cards) are supported by the platform and can be enabled per campus.'],
+  [
+    'Do I need an account to print?',
+    'Yes — a quick sign-in keeps your files and orders secure, and gives you history, receipts and saved files across visits.',
+  ],
+  [
+    'How do I collect my print?',
+    'After you pay, you get a one-time 4-digit PIN valid for 6 hours. Enter it at the machine keypad and your document prints silently, then the PIN expires.',
+  ],
+  [
+    'What file types are supported?',
+    'PDF, Word (.doc/.docx), PowerPoint (.ppt/.pptx) and images (PNG/JPG). We convert everything to a print-ready PDF automatically. Max size is 100 MB.',
+  ],
+  [
+    'What if the machine is out of paper?',
+    "You simply can't pay for an unavailable machine — our health gate blocks it. We suggest the nearest ready machine instead, so you never waste money.",
+  ],
+  [
+    'Is my document private?',
+    'Yes. Files are stored encrypted and only downloaded to the machine after your PIN is verified. The file is deleted from the machine right after printing.',
+  ],
+  [
+    'How does payment work?',
+    'This demo uses a secure simulated payment. Real payment gateways (UPI, cards) are supported by the platform and can be enabled per campus.',
+  ],
 ];
 
 function mountFaq() {

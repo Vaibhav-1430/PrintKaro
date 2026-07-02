@@ -24,8 +24,11 @@ const baseUser: AuthPrincipal = {
   type: 'USER',
   userId: 'u1',
   email: 'a@b.com',
+  phoneNumber: '+919876543210',
   role: ROLES.CUSTOMER,
   emailVerified: true,
+  phoneNumberVerified: false,
+  verified: true,
   status: 'ACTIVE',
   permissions: [PERMISSIONS.PROFILE_READ, PERMISSIONS.CUSTOMER_PORTAL_ACCESS],
   sessionId: 's1',
@@ -67,7 +70,11 @@ describe('AuthGuard', () => {
   });
 
   it('blocks unverified users unless @AllowUnverified', async () => {
-    const { sessions, machineTokens } = guardWith({ ...baseUser, emailVerified: false });
+    const { sessions, machineTokens } = guardWith({
+      ...baseUser,
+      emailVerified: false,
+      verified: false,
+    });
     const denied = makeContext({ headers: {} });
     const guardA = new AuthGuard(denied.reflector, sessions, machineTokens);
     await expect(guardA.canActivate(denied.ctx)).rejects.toBeInstanceOf(ForbiddenException);

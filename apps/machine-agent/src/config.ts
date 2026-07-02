@@ -23,7 +23,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AgentConfig {
   };
 
   return {
-    apiBaseUrl: env.PK_API_BASE_URL ?? 'http://localhost:4000',
+    apiBaseUrl: env.PK_API_BASE_URL ?? 'https://printkaro-b9r0.onrender.com',
     machineId: required('PK_MACHINE_ID'),
     machineSecret: required('PK_MACHINE_SECRET'),
     heartbeatIntervalSec: Number(env.PK_HEARTBEAT_INTERVAL_SEC ?? HEARTBEAT_INTERVAL_SEC),

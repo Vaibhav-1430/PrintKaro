@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- PK:HEAD -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' http://localhost:4000 https: wss:; manifest-src 'self'" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' https://printkaro-b9r0.onrender.com https: wss:; manifest-src 'self'"
+    />
     <meta name="robots" content="noindex,follow" />
     <link rel="canonical" href="https://printkaro.app/auth.html" />
     <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
@@ -14,83 +17,114 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <meta property="og:site_name" content="Print Karo" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Sign in — Print Karo" />
-    <meta property="og:description" content="Verify your phone to save your prints." />
+    <meta property="og:title" content="Sign in with your phone — Print Karo" />
+    <meta property="og:description" content="One-time SMS code. No passwords, no sign-up forms." />
     <meta property="og:url" content="https://printkaro.app/auth.html" />
     <meta property="og:image" content="https://printkaro.app/assets/icons/icon-512.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Sign in — Print Karo" />
-    <meta name="twitter:description" content="Verify your phone to save your prints." />
+    <meta name="twitter:description" content="Sign in to save your prints." />
     <meta name="twitter:image" content="https://printkaro.app/assets/icons/icon-512.png" />
     <!-- /PK:HEAD -->
     <title>Sign in — Print Karo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="assets/css/tokens.css" />
     <link rel="stylesheet" href="assets/css/base.css" />
     <link rel="stylesheet" href="assets/css/components.css" />
     <link rel="stylesheet" href="assets/css/animations.css" />
     <link rel="stylesheet" href="assets/css/app.css" />
     <script>
-      document.documentElement.setAttribute('data-theme', localStorage.getItem('pk_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      document.documentElement.setAttribute(
+        'data-theme',
+        localStorage.getItem('pk_theme') ||
+          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+      );
     </script>
   </head>
   <body>
     <header id="nav"></header>
     <main class="app-main center" style="min-height: calc(100vh - var(--nav-h))">
-      <div class="container app-narrow" style="max-width: 460px">
+      <div class="app-narrow container" style="max-width: 460px">
         <div class="card glass fade-in" style="padding: 32px">
           <div class="text-center" style="margin-bottom: 24px">
-            <span class="brand-mark" style="margin: 0 auto 14px; width: 44px; height: 44px; font-size: var(--fs-lg)">P</span>
+            <span
+              class="brand-mark"
+              style="margin: 0 auto 14px; width: 44px; height: 44px; font-size: var(--fs-lg)"
+              >P</span
+            >
             <h1 id="auth-title" style="font-size: var(--fs-2xl)">Continue with your phone</h1>
-            <p id="auth-sub">No passwords. We'll verify your number to save your prints.</p>
+            <p id="auth-sub">We’ll text you a one-time code — no password, no sign-up forms.</p>
           </div>
 
           <!-- Step 1: name + phone -->
-          <form id="step-phone" class="stack" novalidate>
+          <form id="phone-form" class="stack" novalidate>
             <div class="field">
               <label class="label" for="name">Your name</label>
               <input class="input" id="name" placeholder="e.g. Ananya Sharma" autocomplete="name" />
             </div>
             <div class="field">
               <label class="label" for="phone">Phone number</label>
-              <div class="phone-input">
-                <span class="cc">+91</span>
-                <input id="phone" inputmode="numeric" maxlength="10" placeholder="98765 43210" autocomplete="tel-national" />
-              </div>
+              <input
+                class="input"
+                id="phone"
+                type="tel"
+                inputmode="tel"
+                placeholder="98765 43210"
+                autocomplete="tel"
+              />
               <span class="field-error hidden" id="phone-err"></span>
             </div>
-            <button class="btn btn-primary btn-lg btn-block" type="submit" id="send-otp">Send code</button>
+            <button class="btn btn-primary btn-lg btn-block" type="submit" id="send-otp">
+              Send code
+            </button>
             <p class="text-muted text-center" style="font-size: var(--fs-xs)">
-              Creating an account is optional — this simply links your orders to your number.
+              First time here? Verifying your number creates your account automatically.
             </p>
           </form>
 
           <!-- Step 2: OTP -->
-          <form id="step-otp" class="stack hidden" novalidate>
-            <p class="text-center">Enter the 6-digit code sent to <b id="otp-phone"></b>.</p>
-            <div class="otp" id="otp-boxes">
-              <input inputmode="numeric" maxlength="1" aria-label="Digit 1" />
-              <input inputmode="numeric" maxlength="1" aria-label="Digit 2" />
-              <input inputmode="numeric" maxlength="1" aria-label="Digit 3" />
-              <input inputmode="numeric" maxlength="1" aria-label="Digit 4" />
-              <input inputmode="numeric" maxlength="1" aria-label="Digit 5" />
-              <input inputmode="numeric" maxlength="1" aria-label="Digit 6" />
+          <form id="otp-form" class="stack hidden" novalidate>
+            <div class="field">
+              <label class="label" for="otp">Enter the 6-digit code</label>
+              <input
+                class="input"
+                id="otp"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="6"
+                placeholder="••••••"
+                autocomplete="one-time-code"
+                style="letter-spacing: 0.5em; text-align: center; font-size: var(--fs-xl)"
+              />
+              <span class="field-error hidden" id="otp-err"></span>
+              <p class="text-muted" id="otp-sent-to" style="font-size: var(--fs-xs)"></p>
             </div>
-            <span class="field-error hidden text-center" id="otp-err"></span>
-            <button class="btn btn-primary btn-lg btn-block" type="submit" id="verify-otp">Verify &amp; continue</button>
-            <div class="between" style="justify-content: center; gap: 8px">
-              <button type="button" class="btn btn-ghost" id="resend">Resend code</button>
-              <button type="button" class="btn btn-ghost" id="edit-phone">Change number</button>
+            <button class="btn btn-primary btn-lg btn-block" type="submit" id="verify-otp">
+              Verify &amp; continue
+            </button>
+            <div class="between" style="gap: 8px">
+              <button type="button" class="btn btn-ghost btn-block" id="change-number">
+                Change number
+              </button>
+              <button type="button" class="btn btn-outline btn-block" id="resend-otp" disabled>
+                Resend code
+              </button>
             </div>
-            <p class="text-muted text-center" style="font-size: var(--fs-xs)">
-              Demo: enter any 6 digits to continue — your number secures the session.
-            </p>
           </form>
 
-          <div class="text-center" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px">
-            <a href="index.html" class="text-muted" style="font-size: var(--fs-sm)">← Back to home</a>
+          <div
+            class="text-center"
+            style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px"
+          >
+            <a href="index.html" class="text-muted" style="font-size: var(--fs-sm)"
+              >← Back to home</a
+            >
           </div>
         </div>
       </div>

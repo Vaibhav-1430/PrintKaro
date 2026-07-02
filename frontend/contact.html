@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- PK:HEAD -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' http://localhost:4000 https: wss:; manifest-src 'self'" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' https://printkaro-b9r0.onrender.com https: wss:; manifest-src 'self'"
+    />
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://printkaro.app/contact.html" />
     <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
@@ -27,20 +30,27 @@
     <meta name="description" content="Get in touch to bring Print Karo to your campus." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="assets/css/tokens.css" />
     <link rel="stylesheet" href="assets/css/base.css" />
     <link rel="stylesheet" href="assets/css/components.css" />
     <link rel="stylesheet" href="assets/css/animations.css" />
     <link rel="stylesheet" href="assets/css/app.css" />
     <script>
-      document.documentElement.setAttribute('data-theme', localStorage.getItem('pk_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      document.documentElement.setAttribute(
+        'data-theme',
+        localStorage.getItem('pk_theme') ||
+          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+      );
     </script>
   </head>
   <body data-active="">
     <header id="nav"></header>
     <main class="app-main">
-      <div class="container app-narrow">
+      <div class="app-narrow container">
         <div class="text-center" style="margin-bottom: 28px">
           <span class="eyebrow">Contact</span>
           <h1 style="font-size: var(--fs-2xl)">Let's bring Print Karo to your campus</h1>
@@ -48,15 +58,27 @@
         </div>
         <div class="card">
           <form id="contact-form" class="stack" novalidate>
-            <div class="field"><label class="label" for="c-name">Name</label><input class="input" id="c-name" required /></div>
-            <div class="field"><label class="label" for="c-email">Email</label><input class="input" id="c-email" type="email" required /></div>
-            <div class="field"><label class="label" for="c-msg">Message</label><textarea class="textarea" id="c-msg" rows="4" required></textarea></div>
+            <div class="field">
+              <label class="label" for="c-name">Name</label
+              ><input class="input" id="c-name" required />
+            </div>
+            <div class="field">
+              <label class="label" for="c-email">Email</label
+              ><input class="input" id="c-email" type="email" required />
+            </div>
+            <div class="field">
+              <label class="label" for="c-msg">Message</label
+              ><textarea class="textarea" id="c-msg" rows="4" required></textarea>
+            </div>
             <div id="c-status"></div>
             <button class="btn btn-primary btn-lg" type="submit">Send message</button>
           </form>
         </div>
-        <p class="text-center text-muted" style="margin-top: 20px; font-size: var(--fs-sm)">
-          Or email us at <a href="mailto:hello@printkaro.app" style="color: var(--brand-500)">hello@printkaro.app</a>
+        <p class="text-muted text-center" style="margin-top: 20px; font-size: var(--fs-sm)">
+          Or email us at
+          <a href="mailto:hello@printkaro.app" style="color: var(--brand-500)"
+            >hello@printkaro.app</a
+          >
         </p>
       </div>
     </main>
@@ -76,7 +98,8 @@
             $('#c-status').innerHTML = '<div class="field-error">Please fill in all fields.</div>';
             return;
           }
-          $('#c-status').innerHTML = '<div class="badge badge-success" style="padding:10px 14px">Thanks! We\'ll be in touch within a day.</div>';
+          $('#c-status').innerHTML =
+            '<div class="badge badge-success" style="padding:10px 14px">Thanks! We\'ll be in touch within a day.</div>';
           toast('Message sent', 'success');
           e.target.reset();
         });

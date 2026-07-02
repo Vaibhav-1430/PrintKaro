@@ -51,16 +51,12 @@ function pageRange() {
   return parts.join(',');
 }
 
-const SHOWCASE_MACHINES = [
-  { id: '', name: 'Sign in to choose a live machine', online: false },
-];
-
 async function loadMachines() {
   const sel = $('#machine');
   const note = $('#machine-note');
   let list = null;
   try {
-    list = await api.machines();
+    list = await api.machines(); // public directory — no sign-in needed
   } catch {
     list = null;
   }
@@ -72,7 +68,8 @@ async function loadMachines() {
         .map((m) => {
           const ok = m.online && m.gateResult !== 'BLOCKED';
           const status = m.online ? m.gateResult : 'offline';
-          return `<option value="${m.id}" ${ok ? '' : 'disabled'}>${m.name} (${m.code}) — ${status}</option>`;
+          const place = m.location?.building || m.location?.college || '';
+          return `<option value="${m.id}" ${ok ? '' : 'disabled'}>${escapeHtml(m.name)} (${escapeHtml(m.code)})${place ? ' · ' + escapeHtml(place) : ''} — ${status}</option>`;
         })
         .join('');
     const firstReady = list.find((m) => m.online && m.gateResult === 'READY');
@@ -81,14 +78,10 @@ async function loadMachines() {
       state.machineId = firstReady.id;
     }
   } else {
-    // Customers can't read the machine list until signed in; allow choosing at
-    // pay time. Provide a single placeholder + note.
-    sel.innerHTML = SHOWCASE_MACHINES.map(
-      (m) => `<option value="${m.id}">${m.name}</option>`,
-    ).join('');
+    sel.innerHTML = '<option value="">No machines available right now</option>';
     note.classList.remove('hidden');
     note.style.color = 'var(--text-3)';
-    note.textContent = 'Live machine selection unlocks after you verify your phone.';
+    note.textContent = 'No print stations are online at the moment — please try again shortly.';
   }
 }
 
@@ -192,7 +185,8 @@ function renderWarnings(meta) {
   const host = $('#doc-warnings');
   if (!host || !meta) return;
   const w = [];
-  if (meta.pageCount > 100) w.push(`Large document — ${meta.pageCount} pages. Double-check before paying.`);
+  if (meta.pageCount > 100)
+    w.push(`Large document — ${meta.pageCount} pages. Double-check before paying.`);
   if (meta.isColor && state.colorMode === 'BW')
     w.push('This document has colour — printing in B&W will drop colours.');
   if (meta.orientation === 'landscape') w.push('Landscape orientation detected.');
@@ -319,15 +313,21 @@ async function main() {
   state.uploadId = up.uploadId;
 
   // Fetch page count + metadata for accurate pricing, page chips and warnings.
+  // Guest files are still local (no server record yet): the PDF preview below
+  // supplies the real page count; non-PDF counts are confirmed at checkout.
   let meta = null;
-  try {
-    const u = await api.getUpload(up.uploadId);
-    meta = u.metadata;
-    lastMeta = meta;
-    state.pageCount = meta?.pageCount || 1;
-    $('#file-hint').textContent = `${up.filename || 'Document'} · ${state.pageCount} page(s)`;
-  } catch {
-    $('#file-hint').textContent = up.filename || 'Document';
+  if (up.local) {
+    $('#file-hint').textContent = `${up.filename || 'Document'} · uploads at checkout`;
+  } else {
+    try {
+      const u = await api.getUpload(up.uploadId);
+      meta = u.metadata;
+      lastMeta = meta;
+      state.pageCount = meta?.pageCount || 1;
+      $('#file-hint').textContent = `${up.filename || 'Document'} · ${state.pageCount} page(s)`;
+    } catch {
+      $('#file-hint').textContent = up.filename || 'Document';
+    }
   }
 
   await loadMachines();

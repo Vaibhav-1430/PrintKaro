@@ -5,6 +5,12 @@ import { ROLES } from './roles';
 /** Reusable field validators. */
 export const emailSchema = z.string().trim().toLowerCase().email('Enter a valid email address.');
 
+/** E.164 phone number: +, country code, 8–15 digits (e.g. +919876543210). */
+export const e164PhoneSchema = z
+  .string()
+  .trim()
+  .regex(/^\+[1-9]\d{7,14}$/, 'Enter a valid phone number with country code.');
+
 export const strongPasswordSchema = z.string().refine(isStrongPassword, {
   message:
     'Password must be 12+ chars with uppercase, lowercase, number and special character, and not be common.',
@@ -96,8 +102,10 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
+  phoneNumber: string | null;
   role: keyof typeof ROLES;
   emailVerified: boolean;
+  phoneNumberVerified: boolean;
   status: 'ACTIVE' | 'SUSPENDED' | 'PENDING';
 }
 
