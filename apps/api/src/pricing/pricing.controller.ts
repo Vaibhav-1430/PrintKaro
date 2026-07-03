@@ -7,19 +7,23 @@ import {
   type PricingRuleInput,
 } from '@print-karo/types';
 import { PricingService } from './pricing.service';
-import { Customer, SuperAdmin } from '../rbac/role-decorators';
+import { SuperAdmin } from '../rbac/role-decorators';
+import { Public } from '../rbac/decorators';
 import { ZodBody } from '../common/zod-body.decorator';
 
 /**
- * Pricing endpoints. Customers calculate a price for chosen options; super
- * admins manage the admin-configurable pricing rules.
+ * Pricing endpoints. Anyone can calculate a price for chosen options (the
+ * customer flow shows live pricing on the options page BEFORE sign-in — upload
+ * and options are guest steps; auth happens right before payment). It's a pure
+ * calculation over public rules: no data is read or written and no PII is
+ * involved. Super admins manage the admin-configurable pricing rules.
  */
 @Controller()
 export class PricingController {
   constructor(private readonly pricing: PricingService) {}
 
   @Post('pricing/calculate')
-  @Customer(PERMISSIONS.ORDER_CREATE)
+  @Public()
   calculate(@ZodBody(calculatePriceSchema) body: CalculatePriceInput) {
     return this.pricing.calculate(body);
   }

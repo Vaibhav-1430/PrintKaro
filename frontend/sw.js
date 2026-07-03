@@ -6,7 +6,7 @@
        (cookie sessions + live data must never be served stale).
      • Navigation requests that fail offline → offline.html.
 */
-const VERSION = 'pk-v1.0.0';
+const VERSION = 'pk-v1.1.0';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 
@@ -96,7 +96,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static shell asset: cache-first, revalidate in background.
+  // Code assets (JS/CSS) are NOT content-hashed in this no-build app, so a
+  // cache-first strategy can serve a stale module alongside a freshly-fetched
+  // one — e.g. an old api.js (missing api.session) with a new auth.js — which
+  // throws "api.session is not a function". Serve code NETWORK-FIRST so an online
+  // client always gets a consistent current bundle; fall back to cache offline.
+  const isCode = /\.(?:js|css)$/i.test(url.pathname);
+  if (isCode) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(RUNTIME).then((c) => c.put(request, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
+  // Other static assets (icons/images/fonts): cache-first, revalidate in background.
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request)

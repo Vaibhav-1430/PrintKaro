@@ -11,6 +11,10 @@ export const CONFIG = {
   ALLOWED_TYPES: ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg'],
   PIN_TTL_HOURS: 6,
   MACHINE_REFRESH_MS: 30_000, // live availability poll on the machines page
+  // Notification-center poll interval. MUST be defined: notifications.js does
+  // setInterval(refresh, CONFIG.NOTIFY_POLL_MS); if this were undefined the timer
+  // fires with a 0ms delay and hammers /notifications (ERR_INSUFFICIENT_RESOURCES).
+  NOTIFY_POLL_MS: 30_000,
   // Where to send the user after a successful sign-in during the flow.
   ROUTES: {
     home: 'index.html',

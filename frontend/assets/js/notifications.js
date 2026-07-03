@@ -52,12 +52,16 @@ export function mountNotifications() {
   bell.addEventListener('click', () => togglePanel(bell, panel));
   $('#notify-readall').addEventListener('click', markAllRead);
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.notify') && !panel.classList.contains('hidden')) closePanel(bell, panel);
+    if (!e.target.closest('.notify') && !panel.classList.contains('hidden'))
+      closePanel(bell, panel);
   });
 
   refresh(true);
   clearInterval(pollTimer);
-  pollTimer = setInterval(() => refresh(false), CONFIG.NOTIFY_POLL_MS);
+  // Guard against a missing/too-small config value: setInterval(fn, undefined)
+  // polls with a 0ms delay and floods the API. Never poll faster than 10s.
+  const pollMs = Math.max(10_000, Number(CONFIG.NOTIFY_POLL_MS) || 30_000);
+  pollTimer = setInterval(() => refresh(false), pollMs);
 }
 
 function togglePanel(bell, panel) {
@@ -129,9 +133,9 @@ function renderList() {
       </div>`,
     )
     .join('');
-  list.querySelectorAll('.notify-item.unread').forEach((row) =>
-    row.addEventListener('click', () => markRead(row.dataset.id, row)),
-  );
+  list
+    .querySelectorAll('.notify-item.unread')
+    .forEach((row) => row.addEventListener('click', () => markRead(row.dataset.id, row)));
 }
 
 async function markRead(id, row) {
