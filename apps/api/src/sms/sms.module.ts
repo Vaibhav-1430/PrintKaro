@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ConsoleSmsSender, type SmsSender } from '@print-karo/auth';
 import { SMS_SENDER } from '../auth/auth.tokens';
 import { Msg91SmsSender } from './msg91.sms-sender';
-import { TwilioVerifySmsSender } from './twilio-verify.sms-sender';
+import { TwilioSmsSender } from './twilio.sms-sender';
 
 /**
  * Provides the application's SmsSender (phone-OTP delivery), selected by
@@ -28,10 +28,12 @@ import { TwilioVerifySmsSender } from './twilio-verify.sms-sender';
               templateId: config.getOrThrow<string>('MSG91_TEMPLATE_ID'),
             });
           case 'twilio':
-            return new TwilioVerifySmsSender({
+            return new TwilioSmsSender({
               accountSid: config.getOrThrow<string>('TWILIO_ACCOUNT_SID'),
               authToken: config.getOrThrow<string>('TWILIO_AUTH_TOKEN'),
-              verifyServiceSid: config.getOrThrow<string>('TWILIO_VERIFY_SERVICE_SID'),
+              // Exactly one of these is present (enforced by env.schema.ts).
+              messagingServiceSid: config.get<string>('TWILIO_MESSAGING_SERVICE_SID'),
+              fromNumber: config.get<string>('TWILIO_FROM_NUMBER'),
             });
           default:
             logger.warn('SMS_PROVIDER=console — OTP codes are logged to stdout (dev only).');

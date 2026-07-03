@@ -35,7 +35,11 @@ export const envSchema = z
     MSG91_TEMPLATE_ID: z.string().optional(),
     TWILIO_ACCOUNT_SID: z.string().optional(),
     TWILIO_AUTH_TOKEN: z.string().optional(),
-    TWILIO_VERIFY_SERVICE_SID: z.string().optional(),
+    // Programmable Messaging sender: provide EITHER a Messaging Service SID
+    // (MG..., recommended) OR a purchased Twilio number (E.164). Twilio only
+    // delivers the SMS; Better Auth generates/verifies the OTP.
+    TWILIO_MESSAGING_SERVICE_SID: z.string().optional(),
+    TWILIO_FROM_NUMBER: z.string().optional(),
     OTP_EXPIRY_SEC: z.coerce.number().int().positive().default(300), // 5m
     OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
     PHONE_EMAIL_DOMAIN: z.string().default('phone.printkaro.app'),
@@ -82,7 +86,7 @@ export const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ['SMS_PROVIDER'],
         message:
-          'console SMS provider is dev-only. Set SMS_PROVIDER=msg91 (MSG91_AUTH_KEY, MSG91_TEMPLATE_ID) or SMS_PROVIDER=twilio (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID).',
+          'console SMS provider is dev-only. Set SMS_PROVIDER=msg91 (MSG91_AUTH_KEY, MSG91_TEMPLATE_ID) or SMS_PROVIDER=twilio (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER).',
       });
     }
     if (env.SMS_PROVIDER === 'msg91') {
@@ -97,11 +101,7 @@ export const envSchema = z
       }
     }
     if (env.SMS_PROVIDER === 'twilio') {
-      for (const key of [
-        'TWILIO_ACCOUNT_SID',
-        'TWILIO_AUTH_TOKEN',
-        'TWILIO_VERIFY_SERVICE_SID',
-      ] as const) {
+      for (const key of ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN'] as const) {
         if (!env[key]) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -109,6 +109,17 @@ export const envSchema = z
             message: `${key} is required when SMS_PROVIDER=twilio`,
           });
         }
+      }
+      // Programmable Messaging needs a sender identity. A Verify Service SID
+      // (VA...) does NOT work here — you must provision a Messaging Service or
+      // a phone number. Require exactly one.
+      if (!env.TWILIO_MESSAGING_SERVICE_SID && !env.TWILIO_FROM_NUMBER) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['TWILIO_MESSAGING_SERVICE_SID'],
+          message:
+            'SMS_PROVIDER=twilio needs a sender: set TWILIO_MESSAGING_SERVICE_SID (MG...) or TWILIO_FROM_NUMBER (E.164). A Verify Service SID (VA...) will not work.',
+        });
       }
     }
   });

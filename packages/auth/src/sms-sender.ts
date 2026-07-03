@@ -14,7 +14,7 @@ export interface SmsOtpMessage {
 }
 
 export interface SmsSender {
-  /** Provider identifier for logs/diagnostics ("console", "msg91", "twilio-verify"). */
+  /** Provider identifier for logs/diagnostics ("console", "msg91", "twilio"). */
   readonly name: string;
   /** Deliver the OTP. Throw on failure — Better Auth surfaces the error to the client. */
   sendOtp(message: SmsOtpMessage): Promise<void>;
