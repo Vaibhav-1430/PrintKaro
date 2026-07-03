@@ -29,7 +29,6 @@ export class TwilioVerifySmsSender implements SmsSender {
     const body = new URLSearchParams({
       To: message.phoneNumber,
       Channel: 'sms',
-      CustomCode: message.code,
     });
     const basic = Buffer.from(`${this.config.accountSid}:${this.config.authToken}`).toString(
       'base64',
