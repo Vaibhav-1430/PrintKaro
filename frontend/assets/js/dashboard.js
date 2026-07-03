@@ -67,7 +67,10 @@ function renderActiveOrder() {
       pin
         ? `<div class="text-center">
             <div class="text-muted" style="font-size:var(--fs-sm)">Your PIN</div>
-            <div class="pin-display" style="margin:12px 0">${pin.split('').map((d) => `<div class="pin-digit">${d}</div>`).join('')}</div>
+            <div class="pin-display" style="margin:12px 0">${pin
+              .split('')
+              .map((d) => `<div class="pin-digit">${d}</div>`)
+              .join('')}</div>
             <div class="between" style="justify-content:center;gap:16px">
               <span class="countdown" data-expires="${active.pinExpiresAt || ''}"><span data-cd>—</span></span>
               <button class="btn btn-outline" data-copy="${pin}">Copy PIN</button>
@@ -214,7 +217,11 @@ function renderFiles() {
 }
 
 function renderInvoices() {
-  const paid = orders.filter((o) => ['PAID', 'PIN_GENERATED', 'WAITING_AT_MACHINE', 'PRINTING', 'COMPLETED', 'REFUNDED'].includes(o.status));
+  const paid = orders.filter((o) =>
+    ['PAID', 'PIN_GENERATED', 'WAITING_AT_MACHINE', 'PRINTING', 'COMPLETED', 'REFUNDED'].includes(
+      o.status,
+    ),
+  );
   if (!paid.length) return `<div class="empty"><p>No invoices yet.</p></div>`;
   return paid
     .map(
@@ -269,18 +276,22 @@ function wireTabEvents(content, tab) {
       rerenderOrders();
     }),
   );
-  content.querySelectorAll('[data-dup]').forEach((b) =>
-    b.addEventListener('click', () => duplicateOrder(b.dataset.dup)),
-  );
-  content.querySelectorAll('[data-copypin]').forEach((b) =>
-    b.addEventListener('click', () => copyText(b.dataset.copypin)),
-  );
-  content.querySelectorAll('[data-dl]').forEach((b) =>
-    b.addEventListener('click', () => toast('Your file stays private — re-print it via Duplicate.', 'info')),
-  );
-  content.querySelectorAll('[data-receipt]').forEach((b) =>
-    b.addEventListener('click', () => downloadReceipt(b.dataset.receipt)),
-  );
+  content
+    .querySelectorAll('[data-dup]')
+    .forEach((b) => b.addEventListener('click', () => duplicateOrder(b.dataset.dup)));
+  content
+    .querySelectorAll('[data-copypin]')
+    .forEach((b) => b.addEventListener('click', () => copyText(b.dataset.copypin)));
+  content
+    .querySelectorAll('[data-dl]')
+    .forEach((b) =>
+      b.addEventListener('click', () =>
+        toast('Your file stays private — re-print it via Duplicate.', 'info'),
+      ),
+    );
+  content
+    .querySelectorAll('[data-receipt]')
+    .forEach((b) => b.addEventListener('click', () => downloadReceipt(b.dataset.receipt)));
 }
 
 /** Re-render only the orders tab in place (keeps focus in the search box). */
@@ -332,7 +343,8 @@ function downloadReceipt(orderNumber) {
   if (!o) return;
   const w = window.open('', '_blank');
   if (!w) return toast('Allow pop-ups to view the receipt.', 'info');
-  w.document.write(`<!doctype html><title>Receipt ${escapeHtml(orderNumber)}</title>
+  w.document.write(
+    `<!doctype html><title>Receipt ${escapeHtml(orderNumber)}</title>
     <body style="font-family:system-ui;padding:40px;max-width:520px;margin:auto">
       <h1 style="margin:0">Print Karo</h1><p style="color:#666">Receipt</p>
       <hr><p><b>Order:</b> ${escapeHtml(orderNumber)}</p>
@@ -340,7 +352,8 @@ function downloadReceipt(orderNumber) {
       <p><b>Status:</b> ${escapeHtml(o.status)}</p>
       <p style="font-size:24px"><b>Total:</b> ${escapeHtml(formatPaise(o.amountPaise))}</p>
       <hr><p style="color:#666;font-size:12px">Thank you for using Print Karo.</p>
-      <script>window.print()</scr` + `ipt></body>`);
+      <script>window.print()</scr` + `ipt></body>`,
+  );
   w.document.close();
 }
 

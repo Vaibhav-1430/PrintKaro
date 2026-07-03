@@ -23,19 +23,25 @@ test.describe('accessibility basics', () => {
 
   test('all images have alt text or are decorative', async ({ page }) => {
     await page.goto('/index.html');
-    const missing = await page.$$eval('img', (imgs) =>
-      imgs.filter((i) => !i.hasAttribute('alt') && i.getAttribute('role') !== 'presentation').length,
+    const missing = await page.$$eval(
+      'img',
+      (imgs) =>
+        imgs.filter((i) => !i.hasAttribute('alt') && i.getAttribute('role') !== 'presentation')
+          .length,
     );
     expect(missing).toBe(0);
   });
 
   test('buttons/links have an accessible name', async ({ page }) => {
     await page.goto('/machines.html');
-    const unnamed = await page.$$eval('a, button', (els) =>
-      els.filter((e) => {
-        const name = (e.textContent || '').trim() || e.getAttribute('aria-label') || e.getAttribute('title');
-        return !name;
-      }).length,
+    const unnamed = await page.$$eval(
+      'a, button',
+      (els) =>
+        els.filter((e) => {
+          const name =
+            (e.textContent || '').trim() || e.getAttribute('aria-label') || e.getAttribute('title');
+          return !name;
+        }).length,
     );
     expect(unnamed).toBe(0);
   });
