@@ -86,6 +86,16 @@
   }
 }
 
+/* Above-the-fold hero content renders in place — no entrance offset. Animating
+   the hero in hurts LCP (text paints late) and the vertical entrance transform
+   registers as layout instability (CLS). Reveals are for below-fold content. */
+.hero [data-reveal],
+.hero [data-stagger] > * {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
 /* If the user prefers reduced motion, reveal instantly. */
 @media (prefers-reduced-motion: reduce) {
   [data-reveal],

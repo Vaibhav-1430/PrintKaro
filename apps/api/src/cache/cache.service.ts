@@ -21,15 +21,46 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('No REDIS_URL set — using in-memory cache fallback');
       return;
     }
+
+    // ioredis only speaks the RESP protocol over redis://|rediss://. A common
+    // misconfig is pasting an Upstash REST endpoint (https://…), which ioredis
+    // can't use — it would ENOENT and reconnect forever. Reject anything that
+    // isn't a Redis URL up front and fall back to memory cleanly.
+    if (!/^rediss?:\/\//i.test(url)) {
+      this.logger.warn(
+        `REDIS_URL is not a redis:// or rediss:// URL (got "${url.split('://')[0]}://…") — ` +
+          'using in-memory cache fallback. For Upstash, use the redis:// connection string, not the REST URL.',
+      );
+      return;
+    }
+
     try {
-      this.redis = new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 2 });
+      this.redis = new Redis(url, {
+        lazyConnect: true,
+        maxRetriesPerRequest: 2,
+        // Give up after a few reconnect attempts instead of looping forever
+        // (which floods logs and holds a doomed socket open). Correctness never
+        // depends on the cache, so falling back to memory is safe.
+        retryStrategy: (times) => (times > 5 ? null : Math.min(times * 200, 2000)),
+      });
       this.redis.on('error', (err) => this.logger.warn(`Redis error: ${err.message}`));
+      // When ioredis exhausts retries it emits 'end'; drop to memory then.
+      this.redis.on('end', () => {
+        if (this.redis) {
+          this.logger.warn('Redis connection ended — using in-memory cache fallback');
+          this.redis = null;
+        }
+      });
       void this.redis.connect().catch((err) => {
         this.logger.warn(`Redis connect failed, falling back to memory: ${String(err)}`);
+        // disconnect() stops ioredis's internal reconnect loop; nulling the
+        // reference alone would leave it retrying in the background.
+        this.redis?.disconnect();
         this.redis = null;
       });
     } catch (err) {
       this.logger.warn(`Redis init failed: ${String(err)}`);
+      this.redis?.disconnect();
       this.redis = null;
     }
   }

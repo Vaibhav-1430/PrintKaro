@@ -79,6 +79,14 @@
   display: grid;
   place-items: center;
   perspective: 1000px;
+  /* Reserve the illustration's height up front so its reveal/animation doesn't
+     shift surrounding layout (CLS). Matches the printer's rendered height. */
+  min-height: 320px;
+}
+@media (max-width: 640px) {
+  .hero-stage {
+    min-height: 260px;
+  }
 }
 .printer {
   width: min(440px, 90vw);
@@ -242,6 +250,13 @@ html:not(.js) .ticket {
   gap: var(--sp-5);
   counter-reset: step;
 }
+/* These card titles are semantic <h2> (for correct heading order) but should
+   read at card-title scale, not full section-heading scale. */
+.step h2,
+.price-card h2 {
+  font-size: var(--fs-xl);
+  line-height: 1.25;
+}
 .step {
   position: relative;
   padding: var(--sp-5);
@@ -270,6 +285,14 @@ html:not(.js) .ticket {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--sp-4);
+  /* Reserve a row's height so the skeleton→card swap doesn't shift layout (CLS). */
+  min-height: 265px;
+}
+/* Reserve the async toolbar's height up front so injecting it doesn't push the
+   grid down (CLS). Collapses back to 0 only if it never mounts. */
+#machines-toolbar:empty {
+  display: block;
+  min-height: 64px;
 }
 .machine-card {
   padding: var(--sp-4);
@@ -510,48 +533,29 @@ html:not(.js) .ticket {
 }
 
 /* ---------- Footer ---------- */
-.footer {
-  border-top: 1px solid var(--border);
-  padding-block: var(--sp-8) var(--sp-6);
+/* Footer styles moved to components.css so every page (marketing + app/flow)
+   renders the shared footer identically. See components.css → "Shared footer". */
+
+/* Swiper testimonial pagination: keep the visual dot small but give each bullet
+   a >=24px tappable area (WCAG 2.5.8) via padding + background-clip. */
+.swiper-pagination-bullet {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  opacity: 1;
+  position: relative;
 }
-.footer-grid {
-  display: grid;
-  grid-template-columns: 1.5fr repeat(3, 1fr);
-  gap: var(--sp-6);
+.swiper-pagination-bullet::before {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: background 0.2s var(--ease-out);
 }
-.footer h4 {
-  font-size: var(--fs-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-3);
-  margin-bottom: var(--sp-3);
-}
-.footer ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-.footer a {
-  color: var(--text-2);
-  font-size: var(--fs-sm);
-}
-.footer a:hover {
-  color: var(--text);
-}
-.footer-bottom {
-  margin-top: var(--sp-7);
-  padding-top: var(--sp-5);
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
-  color: var(--text-3);
-  font-size: var(--fs-sm);
-}
-@media (max-width: 860px) {
-  .footer-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.swiper-pagination-bullet-active::before {
+  background: var(--brand-500);
 }

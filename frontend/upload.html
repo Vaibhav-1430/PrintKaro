@@ -6,7 +6,7 @@
     <!-- PK:HEAD -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' https://printkaro-b9r0.onrender.com https: wss:; manifest-src 'self'"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.clarity.ms; worker-src 'self' blob:; connect-src 'self' http://localhost:* https://printkaro-b9r0.onrender.com https: wss:; manifest-src 'self'"
     />
     <meta name="robots" content="noindex,follow" />
     <link rel="canonical" href="https://printkaro.app/upload.html" />
@@ -31,9 +31,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      media="print"
+      onload="this.media = 'all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      />
+    </noscript>
     <link rel="stylesheet" href="assets/css/tokens.css" />
     <link rel="stylesheet" href="assets/css/base.css" />
     <link rel="stylesheet" href="assets/css/components.css" />
@@ -59,7 +67,13 @@
             <p>Drag &amp; drop or browse. PDF, Word, PowerPoint or images up to 100 MB.</p>
           </div>
 
-          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload files">
+          <div
+            class="dropzone"
+            id="dropzone"
+            tabindex="0"
+            role="button"
+            aria-label="Drop your files here or browse to upload"
+          >
             <div class="dz-ic">
               <svg
                 viewBox="0 0 24 24"
@@ -74,7 +88,7 @@
             </div>
             <div class="dz-title">Drop your files here</div>
             <div class="dz-sub">
-              or <span style="color: var(--brand-500); font-weight: 600">browse files</span>
+              or <span style="color: var(--brand-accessible); font-weight: 600">browse files</span>
               <span class="text-muted"> · </span>
               <button
                 type="button"
@@ -82,9 +96,11 @@
                 style="
                   background: none;
                   border: none;
-                  color: var(--brand-500);
+                  color: var(--brand-accessible);
                   font-weight: 600;
                   cursor: pointer;
+                  padding: 6px 4px;
+                  min-height: 32px;
                 "
               >
                 upload a folder
@@ -96,6 +112,7 @@
               class="sr-only"
               multiple
               accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg"
+              aria-label="Choose files to upload"
             />
             <input
               type="file"
@@ -104,6 +121,7 @@
               webkitdirectory
               directory
               multiple
+              aria-label="Choose a folder to upload"
             />
           </div>
 

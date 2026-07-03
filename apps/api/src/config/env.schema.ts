@@ -116,7 +116,17 @@ export const envSchema = z
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(config: Record<string, unknown>): Env {
-  const parsed = envSchema.safeParse(config);
+  // Treat blank values as unset. Deploy platforms (and .env files) frequently
+  // leave optional keys as empty strings (e.g. R2_PUBLIC_URL=); an empty string
+  // is "present" to Zod, so `.url().optional()` would reject it instead of
+  // skipping it. Coercing "" → undefined makes blank optionals behave as unset
+  // while still letting required vars fail with a clear "required" message.
+  const normalized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(config)) {
+    normalized[key] = typeof value === 'string' && value.trim() === '' ? undefined : value;
+  }
+
+  const parsed = envSchema.safeParse(normalized);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  - ${i.path.join('.')}: ${i.message}`)

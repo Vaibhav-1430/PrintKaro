@@ -7,7 +7,7 @@ import { initRipples, toast, loadingButton } from './ui.js';
 import { renderStepper } from './stepper.js';
 import { api, ApiError } from './api.js';
 import { CONFIG } from './config.js';
-import { $, $$, store, goto, formatPaise, sha256, guessMime } from './utils.js';
+import { $, store, goto, formatPaise, sha256, guessMime } from './utils.js';
 import { guardPage } from './auth.js';
 import { getFile, putFile, pruneExcept } from './filecache.js';
 
@@ -155,26 +155,48 @@ function renderPay() {
   $('#pay-amount').textContent = formatPaise(order.amountPaise);
   $('#pay-order').textContent = 'Order ' + order.orderNumber;
 
-  $$('#pay-body [data-outcome]').forEach((btn) => btn.addEventListener('click', () => pay(btn)));
+  $('#pay-now').addEventListener('click', () => pay($('#pay-now')));
 }
 
+// Realistic gateway-style progression shown while the demo charge settles.
+const PAY_STAGES = ['Contacting gateway…', 'Authorising…', 'Confirming payment…'];
+
+/**
+ * Demo payment: one button, always succeeds. We still call the real
+ * initiate → charge endpoints (with a SUCCESS outcome) so the order is marked
+ * PAID and the PIN is minted server-side — a Razorpay adapter later replaces
+ * the simulator behind the same API with no change here.
+ */
 async function pay(btn) {
-  const outcome = btn.dataset.outcome;
   const err = $('#pay-error');
   err.innerHTML = '';
-  const restore = loadingButton(btn, outcome === 'SUCCESS' ? 'Paying…' : 'Processing…');
+  const restore = loadingButton(btn, PAY_STAGES[0]);
+
+  // Cycle the label so the wait reads like a real gateway round-trip.
+  // loadingButton renders `<span class="spinner"></span>{label}`, so we swap the
+  // trailing text node (the spinner stays put).
+  let stage = 0;
+  const ticker = setInterval(() => {
+    stage = Math.min(stage + 1, PAY_STAGES.length - 1);
+    const text = btn.lastChild;
+    if (text && text.nodeType === Node.TEXT_NODE) text.textContent = PAY_STAGES[stage];
+  }, 850);
+
   try {
     await api.initiatePayment(order.id).catch(() => undefined);
-    const payment = await api.simulatePayment(order.id, outcome);
+    const payment = await api.simulatePayment(order.id, 'SUCCESS');
+    clearInterval(ticker);
     if (payment.status === 'SUCCEEDED') {
       toast('Payment successful', 'success');
       goto(CONFIG.ROUTES.success, { order: order.id });
       return;
     }
-    err.innerHTML = `<div class="card" style="border-color:var(--danger)"><b>Payment ${payment.status.toLowerCase()}.</b> You can try again.</div>`;
+    // Should not happen with the demo gateway, but never leave a blank screen.
+    err.innerHTML = `<div class="card" style="border-color:var(--danger)"><b>Payment could not be confirmed.</b> Please try again.</div>`;
     restore();
   } catch (e) {
-    err.innerHTML = `<div class="field-error">${e.message}</div>`;
+    clearInterval(ticker);
+    err.innerHTML = `<div class="field-error">${e.message || 'Payment failed. Please try again.'}</div>`;
     restore();
   }
 }

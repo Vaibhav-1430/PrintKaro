@@ -7,12 +7,66 @@ import { rovingGrid } from './a11y.js';
 // A polished marketing fallback used when live data isn't reachable (customers
 // lack machine:view:assigned → the API returns 403). Never fabricated as "live".
 const SHOWCASE = [
-  { name: 'Central Library — GF', code: 'PK-LIB-01', college: 'Main Campus', online: true, gate: 'READY', paper: 82, ink: 74, queue: 0 },
-  { name: 'Engineering Block A', code: 'PK-ENG-04', college: 'Main Campus', online: true, gate: 'READY', paper: 61, ink: 90, queue: 1 },
-  { name: 'Hostel H7 Common Room', code: 'PK-HOS-07', college: 'Residences', online: true, gate: 'WARNING', paper: 24, ink: 12, queue: 3 },
-  { name: 'Student Center', code: 'PK-STU-02', college: 'Main Campus', online: false, gate: 'BLOCKED', paper: 0, ink: 0, queue: 0 },
-  { name: 'Science Library — 2F', code: 'PK-SCI-03', college: 'Main Campus', online: true, gate: 'READY', paper: 95, ink: 55, queue: 0 },
-  { name: 'Management Block', code: 'PK-MBA-01', college: 'City Campus', online: true, gate: 'READY', paper: 47, ink: 38, queue: 2 },
+  {
+    name: 'Central Library — GF',
+    code: 'PK-LIB-01',
+    college: 'Main Campus',
+    online: true,
+    gate: 'READY',
+    paper: 82,
+    ink: 74,
+    queue: 0,
+  },
+  {
+    name: 'Engineering Block A',
+    code: 'PK-ENG-04',
+    college: 'Main Campus',
+    online: true,
+    gate: 'READY',
+    paper: 61,
+    ink: 90,
+    queue: 1,
+  },
+  {
+    name: 'Hostel H7 Common Room',
+    code: 'PK-HOS-07',
+    college: 'Residences',
+    online: true,
+    gate: 'WARNING',
+    paper: 24,
+    ink: 12,
+    queue: 3,
+  },
+  {
+    name: 'Student Center',
+    code: 'PK-STU-02',
+    college: 'Main Campus',
+    online: false,
+    gate: 'BLOCKED',
+    paper: 0,
+    ink: 0,
+    queue: 0,
+  },
+  {
+    name: 'Science Library — 2F',
+    code: 'PK-SCI-03',
+    college: 'Main Campus',
+    online: true,
+    gate: 'READY',
+    paper: 95,
+    ink: 55,
+    queue: 0,
+  },
+  {
+    name: 'Management Block',
+    code: 'PK-MBA-01',
+    college: 'City Campus',
+    online: true,
+    gate: 'READY',
+    paper: 47,
+    ink: 38,
+    queue: 2,
+  },
 ];
 
 function gateBadge(gate, online) {
@@ -27,7 +81,8 @@ function gateBadge(gate, online) {
 function card(m, live) {
   const online = m.online;
   const gate = m.gateResult || m.gate;
-  const node = el('article', { class: 'card card-hover machine-card' });
+  // role=listitem so the role=list container has the required children (a11y).
+  const node = el('article', { class: 'card card-hover machine-card', role: 'listitem' });
   node.innerHTML = `
     <div class="between">
       <div>
@@ -55,7 +110,8 @@ export async function renderMachines(containerSel, { note = true, limit } = {}) 
   const host = $(containerSel);
   if (!host) return;
 
-  // Skeletons while loading.
+  // Skeletons while loading — not list items, so drop role=list meanwhile (a11y).
+  host.removeAttribute('role');
   host.innerHTML = '';
   for (let i = 0; i < (limit || 4); i++)
     host.append(el('div', { class: 'skeleton', style: 'height:150px;border-radius:16px' }));
@@ -68,8 +124,13 @@ export async function renderMachines(containerSel, { note = true, limit } = {}) 
   }
 
   const live = Array.isArray(list) && list.length > 0;
-  const data = live ? (limit ? list.slice(0, limit) : list) : SHOWCASE.slice(0, limit || SHOWCASE.length);
+  const data = live
+    ? limit
+      ? list.slice(0, limit)
+      : list
+    : SHOWCASE.slice(0, limit || SHOWCASE.length);
 
+  host.setAttribute('role', 'list');
   host.innerHTML = '';
   data.forEach((m) => host.append(card(m, live)));
 
@@ -124,9 +185,10 @@ function meter(label, pct) {
 
 function richCard(m) {
   const badge = gateBadge(m.gate, m.online);
-  const updated = m.live && m.lastHeartbeatAt ? relativeTime(m.lastHeartbeatAt) : m.online ? 'live' : 'offline';
+  const updated =
+    m.live && m.lastHeartbeatAt ? relativeTime(m.lastHeartbeatAt) : m.online ? 'live' : 'offline';
   return `
-    <article class="card card-hover machine-card" tabindex="0" data-status="${m.online ? m.gate : 'OFFLINE'}"
+    <article class="card card-hover machine-card" role="listitem" tabindex="0" data-status="${m.online ? m.gate : 'OFFLINE'}"
              aria-label="${escapeHtml(m.name)}, ${m.online ? m.gate : 'offline'}">
       <div class="between" style="margin-bottom:14px">
         <div style="min-width:0">
@@ -166,9 +228,12 @@ function applyView(host) {
   else if (dashState.sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
 
   if (!rows.length) {
+    // No list items → drop role=list so it doesn't require listitem children (a11y).
+    host.removeAttribute('role');
     host.innerHTML = `<div class="empty" style="grid-column:1/-1"><p>No machines match your search.</p></div>`;
     return;
   }
+  host.setAttribute('role', 'list');
   host.innerHTML = rows.map(richCard).join('');
 }
 
@@ -206,7 +271,9 @@ export async function renderMachineDashboard(gridSel, toolbarSel) {
     );
     toolbar.querySelectorAll('[data-filter]').forEach((b) =>
       b.addEventListener('click', () => {
-        toolbar.querySelectorAll('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+        toolbar
+          .querySelectorAll('[data-filter]')
+          .forEach((x) => x.setAttribute('aria-pressed', 'false'));
         b.setAttribute('aria-pressed', 'true');
         dashState.filter = b.dataset.filter;
         applyView(host);
@@ -225,9 +292,14 @@ export async function renderMachineDashboard(gridSel, toolbarSel) {
 
 async function refreshDashboard(host) {
   if (!dashState.all.length) {
+    // Skeletons aren't list items — drop role=list until real cards render (a11y).
+    // Render a small, height-matched set: over-reserving (e.g. 6 stacked on mobile)
+    // then collapsing to fewer real cards is a large layout shift. Cards fill in
+    // below as data arrives (downward growth ≪ upward collapse for CLS).
+    host.removeAttribute('role');
     host.innerHTML = '';
-    for (let i = 0; i < 6; i++)
-      host.append(el('div', { class: 'skeleton', style: 'height:230px;border-radius:16px' }));
+    for (let i = 0; i < 3; i++)
+      host.append(el('div', { class: 'skeleton', style: 'height:265px;border-radius:16px' }));
   }
   let list = null;
   try {
@@ -242,6 +314,7 @@ async function refreshDashboard(host) {
 
   const note = $('#machines-note');
   if (note && !live) {
-    note.textContent = 'Showing example stations — sign in to see live availability for your campus.';
+    note.textContent =
+      'Showing example stations — sign in to see live availability for your campus.';
   }
 }

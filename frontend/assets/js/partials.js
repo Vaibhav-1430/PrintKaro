@@ -9,8 +9,12 @@ import { ensureSkipLink } from './a11y.js';
 import { lazyImages } from './observers.js';
 import { mountNotifications } from './notifications.js';
 
-const LOGO = `<a class="brand" href="index.html" aria-label="Print Karo home">
-  <span class="brand-mark">P</span><span>Print Karo</span></a>`;
+// The brand mark ("P") is decorative — hide it from the accessibility tree so
+// the link's accessible name is exactly its visible text, "Print Karo". No
+// aria-label: an overriding label that differs from the visible text trips
+// WCAG 2.5.3 (Label in Name); the visible text is already a fine accessible name.
+const LOGO = `<a class="brand" href="index.html">
+  <span class="brand-mark" aria-hidden="true">P</span><span>Print Karo</span></a>`;
 
 const NAV_LINKS = [
   ['how-it-works.html', 'How it works'],
@@ -102,7 +106,7 @@ function mountFooter() {
           </p>
         </div>
         <div>
-          <h4>Product</h4>
+          <h2 class="footer-heading">Product</h2>
           <ul>
             <li><a href="how-it-works.html">How it works</a></li>
             <li><a href="pricing.html">Pricing</a></li>
@@ -111,7 +115,7 @@ function mountFooter() {
           </ul>
         </div>
         <div>
-          <h4>Company</h4>
+          <h2 class="footer-heading">Company</h2>
           <ul>
             <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
@@ -119,7 +123,7 @@ function mountFooter() {
           </ul>
         </div>
         <div>
-          <h4>Account</h4>
+          <h2 class="footer-heading">Account</h2>
           <ul>
             <li><a href="${CONFIG.ROUTES.auth}">Sign in</a></li>
             <li><a href="${CONFIG.ROUTES.dashboard}">Dashboard</a></li>

@@ -117,7 +117,8 @@ p {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--brand-500);
+  /* Theme-aware brand shade that clears WCAG-AA on both light and dark bg. */
+  color: var(--brand-accessible);
 }
 
 .lead {

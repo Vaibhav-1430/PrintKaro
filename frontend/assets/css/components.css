@@ -149,7 +149,8 @@
 }
 .badge-brand {
   background: var(--brand-gradient-soft);
-  color: var(--brand-500);
+  /* Theme-aware brand shade clears WCAG-AA on the soft-brand tint (both themes). */
+  color: var(--brand-accessible);
   border-color: transparent;
 }
 .dot {
@@ -615,4 +616,68 @@ a:focus-visible,
 .tab:focus-visible {
   outline: 3px solid var(--brand-500);
   outline-offset: 2px;
+}
+
+/* ---------- Shared footer (every page: marketing + app/flow) ---------- */
+.footer {
+  border-top: 1px solid var(--border);
+  padding-block: var(--sp-8) var(--sp-6);
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(3, 1fr);
+  gap: var(--sp-6);
+}
+.footer h4,
+.footer .footer-heading {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  /* --text-2 (not --text-3) to clear WCAG-AA contrast on the footer surface. */
+  color: var(--text-2);
+  margin-bottom: var(--sp-3);
+}
+.footer ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.footer a {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  /* Comfortable, WCAG-2.5.8-compliant tap target without altering visual rhythm. */
+  display: inline-block;
+  padding: 6px 0;
+  transition: color 0.15s var(--ease-out);
+}
+.footer a:hover {
+  color: var(--text);
+}
+.footer-bottom {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+@media (max-width: 860px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
 }

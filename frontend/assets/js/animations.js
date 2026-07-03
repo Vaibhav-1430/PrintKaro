@@ -124,16 +124,21 @@ export function heroTimeline() {
   const q = (s) => document.querySelector(s);
 
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+  // Leave the <h1> and .lead alone — they're the LCP text and must paint at first
+  // frame. Touching them with GSAP (even a slide) delays LCP until the CDN lib
+  // loads and reintroduces a layout shift. Animate only the surrounding chrome.
   tl.from('.hero .announce', { y: 16, opacity: 0, duration: 0.6 })
-    .from('.hero h1', { y: 28, opacity: 0, duration: 0.8 }, '-=0.3')
-    .from('.hero .lead', { y: 20, opacity: 0, duration: 0.7 }, '-=0.5')
-    .from('.hero-cta > *', { y: 16, opacity: 0, stagger: 0.12, duration: 0.5 }, '-=0.4')
+    .from('.hero-cta > *', { y: 16, opacity: 0, stagger: 0.12, duration: 0.5 }, '-=0.2')
     .from('.printer', { y: 40, opacity: 0, scale: 0.96, duration: 0.9 }, '-=0.3');
 
   // The ticket "prints out" of the slot.
   const ticket = q('#hero-ticket');
   if (ticket) {
-    tl.from(ticket, { yPercent: -60, scaleY: 0.6, opacity: 0, duration: 0.9, ease: 'power2.out' }, '-=0.4');
+    tl.from(
+      ticket,
+      { yPercent: -60, scaleY: 0.6, opacity: 0, duration: 0.9, ease: 'power2.out' },
+      '-=0.4',
+    );
   }
 
   // Parallax the hero blobs on scroll (subtle) via ScrollTrigger if available.
