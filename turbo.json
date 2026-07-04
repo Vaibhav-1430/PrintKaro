@@ -20,7 +20,7 @@
       "dependsOn": ["//#db:generate"]
     },
     "typecheck": {
-      "dependsOn": ["//#db:generate"]
+      "dependsOn": ["//#db:generate", "^build", "^typecheck"]
     },
     "test": {
       "dependsOn": ["//#db:generate"]
